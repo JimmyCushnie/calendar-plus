@@ -2,32 +2,23 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
-## Optional: richer context menu for existing Second Daily Notes (deferred)
+## Optional: richer context menu for existing Second Daily Notes (partially done, deferred)
 
-When a second daily note already exists, the day context menu shows "Open Second Daily Note" but no file-management actions for it. The primary daily note gets the full Obsidian file menu (delete, rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note gets none of that.
+The day context menu for an existing second daily note currently has **Open Second Daily Note** and **Delete Second Daily Note** (added in 1.9.0). The primary daily note gets the full Obsidian file menu (rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note still lacks:
 
-The gap is most obvious for:
 - **Reveal in file explorer / navigation** — no way to jump to the second daily note's location from the calendar.
-- **Delete** — can't remove a second daily note from the context menu; user has to find it in the file explorer.
 - **Open in new tab / split** — the "Open Second Daily Note" item always uses the current pane (modifier-click is not wired into the context menu path).
 - **Third-party plugin items** — plugins that add items to the `file-menu` event (e.g. templating plugins, sync plugins) only see the primary note, not the second.
 
-Fix: when a second daily note exists, trigger `app.workspace.trigger("file-menu", menu, secondNote, "calendar-context-menu", null)` on the same menu after the "Open Second Daily Note" item, then add a separator before the primary note's file-menu items (if the primary note also exists). This mirrors how the primary note's file ops are currently appended and gives the second note the same Obsidian-standard treatment.
+Fix: when a second daily note exists, trigger `app.workspace.trigger("file-menu", menu, secondNote, "calendar-context-menu", null)` on the same menu after the second-daily items, then add a separator before the primary note's file-menu items (if the primary note also exists). This mirrors how the primary note's file ops are currently appended and gives the second note the same Obsidian-standard treatment.
 
 The section/separator ordering would become: second-daily actions → second-daily file-menu items → [separator] → primary daily file-menu items.
 
-## Optional: visually distinguish the Second Daily Note dot (deferred)
+## Optional: revisit Second Daily Note dot visual (deferred)
 
-Currently the second daily note dot is a plain filled dot (same as the primary daily note dot), so a day with both notes shows two identical filled circles. This works but doesn't communicate the distinction clearly.
+The second daily note dot is currently a half-opacity filled dot (`.dot.filled.second-daily { opacity: 0.5 }` in `styles.css`). It's visually distinct from the full-opacity primary dot without introducing a new color. This works well for `dotMode: "exists"`.
 
-Options considered:
-- **Hollow dot** (`isFilled: false`) — already supported by `Dot.svelte`, one-line change. Ambiguous in `dotMode: "word-count-tasks"` where a hollow dot already signals open tasks.
-- **Accent-colored dot** — keep filled but add a CSS rule targeting `.dot.second-daily` using `--text-accent` or similar. The `className: "second-daily"` hook is already on the dot, so this is just a few lines in `styles.css`. Works in both dot modes, no layout changes.
-- **Dot above the date** — separate container above the date number instead of sharing the `.dot-container` below. Unambiguous but requires a layout change to `Day.svelte`.
-
-The accent-colored dot is probably the cleanest approach when this is revisited. The `className: "second-daily"` is already in `src/ui/sources/secondDailyNote.ts`.
-
-An additional complication: in `dotMode: "word-count-tasks"`, a day cell can already show multiple filled dots (one per N words, up to 5) plus a hollow task dot. Adding a second-daily filled dot in this mode makes it ambiguous whether the extra dot represents more words or a second note. Any visual solution should account for this — the accent-colored dot approach handles it cleanly since color is orthogonal to fill/hollow, but hollow or size-based approaches do not.
+In `dotMode: "word-count-tasks"`, a day cell can show multiple filled word-count dots plus a hollow task dot, and the half-opacity second-daily dot may blend in or cause confusion. If this becomes a real issue, the accent-color approach (using `--text-accent` or `--interactive-accent`) would be orthogonal to fill/hollow and would differentiate clearly in both modes. The `className: "second-daily"` hook is already on the dot, so the change would be a one-line CSS swap.
 
 ## Optional: settings UI modernization (deferred)
 

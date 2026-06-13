@@ -252,6 +252,15 @@ export default class CalendarView extends ItemView {
           .setSection("calendar-actions")
           .onClick(() => void this.openOrCreateSecondDailyNote(date, false))
       );
+      if (secondNote) {
+        menu.addItem((item) =>
+          item
+            .setTitle("Delete Second Daily Note")
+            .setIcon("trash")
+            .setSection("calendar-actions")
+            .onClick(() => void this.app.fileManager.trashFile(secondNote))
+        );
+      }
       // If the primary note exists, append its standard file-menu items below.
       if (primaryNote) {
         this.app.workspace.trigger(

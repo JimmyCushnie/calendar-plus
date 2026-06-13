@@ -7,7 +7,7 @@ import { get } from "svelte/store";
 import { dailyNotes, settings, weeklyNotes } from "../stores";
 import { classList } from "../utils";
 
-const getStreakClasses = (file: TFile): string[] => {
+const getStreakClasses = (file: TFile | null): string[] => {
   return classList({
     "has-note": !!file,
   });

@@ -73,6 +73,12 @@
   background-color: var(--color-background-weekend);
 }
 
+/* Second daily note dot rendered at half opacity to visually distinguish
+   it from the primary daily note dot without introducing a new color. */
+.calendar-plus-wrapper #calendar-container .dot.filled.second-daily {
+  opacity: 0.5;
+}
+
 /* Settings autocomplete dropdown (folder/template fields). The visual look —
    suggestion-container, suggestion-item, is-selected — comes from Obsidian's
    native theme classes. We only add the bits the native classes don't cover:

@@ -16,7 +16,7 @@ There are also many bug fixes that bring both the calendar view and periodic not
 - A calendar view for navigating your vault by date.
 - Built-in periodic notes for daily, weekly, monthly, quarterly, and yearly periodicities. Each periodicity has its own folder, filename format, and optional template — no separate Periodic Notes plugin required.
 - Click a day cell to open or create that day's note. Click a week-number cell to open or create the weekly note. Click the month, year, or quarter labels in the calendar header to open or create the corresponding monthly / yearly / quarterly note.
-- **Second Daily Note:** right-click any day cell to open or create a second daily note for that date. It has its own folder, date format, and template — completely independent of the primary daily note. A second filled dot appears on day cells where a second daily note exists.
+- **Second Daily Note:** right-click any day cell to open or create a second daily note for that date. It has its own folder, date format, and template — completely independent of the primary daily note. A second dot (at half opacity) appears on day cells where a second daily note exists.
 - By default, a filled dot on a day cell means a periodic note exists for that day, and a dot on a week-number cell means a weekly note exists. The optional **Dot style** setting can switch this to word-count dots plus an open-task dot for daily and weekly notes.
 - The calendar view can live anywhere. Drag it to the left sidebar, into the main content area, pin it as a tab, or pop it into its own window — Calendar Plus preserves the placement across plugin reloads.
 - Theme-friendly: the calendar inherits Obsidian's CSS variables and respects the active theme out of the box.
@@ -73,7 +73,7 @@ An optional second daily note per day, accessed by right-clicking a day cell. Co
 - **Folder** is where second daily notes are created. Leave blank for the vault root.
 - **Template file** is an optional path to a template for new second daily notes.
 
-When enabled, right-clicking any day cell shows a context menu. If neither note exists yet, the menu offers **Create Daily Note** and **Create Second Daily Note**. If the primary note already exists, the menu shows **Create/Open Second Daily Note** with the primary note's file actions below it. A filled dot appears on day cells where a second daily note exists, alongside any primary-note dots.
+When enabled, right-clicking any day cell shows a context menu. If neither note exists yet, the menu offers **Create Daily Note** and **Create Second Daily Note**. If a second daily note exists, the menu shows **Open Second Daily Note** and **Delete Second Daily Note**. If the primary note also exists, its standard file actions appear below. A half-opacity dot appears on day cells where a second daily note exists, alongside any primary-note dots.
 
 #### Advanced
 
