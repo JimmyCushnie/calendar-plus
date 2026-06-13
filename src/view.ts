@@ -230,34 +230,37 @@ export default class CalendarView extends ItemView {
 
     if (secondDaily.enabled) {
       const menu = new Menu(this.app);
+      const primaryNote = daily.enabled
+        ? helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {})
+        : null;
       const secondNote = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
+
+      // "Create Daily Note" first, no divider — both items share the same section.
+      if (daily.enabled && !primaryNote) {
+        menu.addItem((item) =>
+          item
+            .setTitle("Create Daily Note")
+            .setIcon("calendar-plus")
+            .setSection("calendar-actions")
+            .onClick(() => void this.openOrCreateDailyNote(date, false))
+        );
+      }
       menu.addItem((item) =>
         item
           .setTitle(secondNote ? "Open Second Daily Note" : "Create Second Daily Note")
           .setIcon("notebook")
-          .setSection("second-daily")
+          .setSection("calendar-actions")
           .onClick(() => void this.openOrCreateSecondDailyNote(date, false))
       );
-      // Primary daily note: file-menu items if it exists, create option if not.
-      if (daily.enabled) {
-        const primaryNote = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
-        if (primaryNote) {
-          this.app.workspace.trigger(
-            "file-menu",
-            menu,
-            primaryNote,
-            "calendar-context-menu",
-            null
-          );
-        } else {
-          menu.addItem((item) =>
-            item
-              .setTitle("Create Daily Note")
-              .setIcon("calendar-plus")
-              .setSection("create-daily")
-              .onClick(() => void this.openOrCreateDailyNote(date, false))
-          );
-        }
+      // If the primary note exists, append its standard file-menu items below.
+      if (primaryNote) {
+        this.app.workspace.trigger(
+          "file-menu",
+          menu,
+          primaryNote,
+          "calendar-context-menu",
+          null
+        );
       }
       menu.showAtPosition(position);
       return;
