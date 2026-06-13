@@ -13,6 +13,8 @@ Options considered:
 
 The accent-colored dot is probably the cleanest approach when this is revisited. The `className: "second-daily"` is already in `src/ui/sources/secondDailyNote.ts`.
 
+An additional complication: in `dotMode: "word-count-tasks"`, a day cell can already show multiple filled dots (one per N words, up to 5) plus a hollow task dot. Adding a second-daily filled dot in this mode makes it ambiguous whether the extra dot represents more words or a second note. Any visual solution should account for this — the accent-colored dot approach handles it cleanly since color is orthogonal to fill/hollow, but hollow or size-based approaches do not.
+
 ## Optional: settings UI modernization (deferred)
 
 Migrating the settings tab to Svelte would potentially give cleaner conditional UI (`{#if}` blocks instead of imperative `.empty()` + rebuild), easier slide / fade animations on enable-toggle expansion, and less imperative DOM rebuilding overall.

@@ -238,7 +238,7 @@ export default class CalendarView extends ItemView {
           .setSection("second-daily")
           .onClick(() => void this.openOrCreateSecondDailyNote(date, false))
       );
-      // If a primary daily note exists, add its standard file-menu items below.
+      // Primary daily note: file-menu items if it exists, create option if not.
       if (daily.enabled) {
         const primaryNote = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
         if (primaryNote) {
@@ -248,6 +248,14 @@ export default class CalendarView extends ItemView {
             primaryNote,
             "calendar-context-menu",
             null
+          );
+        } else {
+          menu.addItem((item) =>
+            item
+              .setTitle("Create Daily Note")
+              .setIcon("calendar-plus")
+              .setSection("create-daily")
+              .onClick(() => void this.openOrCreateDailyNote(date, false))
           );
         }
       }
