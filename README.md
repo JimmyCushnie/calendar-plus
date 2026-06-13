@@ -5,6 +5,7 @@ Calendar Plus is a sidebar calendar for [Obsidian](https://obsidian.md/) with da
 1. **Periodic notes are integrated.** Daily, weekly, monthly, quarterly, and yearly notes are configured directly in Calendar Plus — no separate Periodic Notes plugin required.
 2. **Month, year, and quarter labels are clickable.** Click the labels in the calendar header to open or create the corresponding periodic note, the same way day and week-number cells work.
 3. **Dots default to "a note exists."** By default, a dot on a day or week-number cell simply indicates that the corresponding note exists. If you prefer richer indicators, the **Dot style** setting can show word-count dots and an open-task dot for daily and weekly notes.
+4. **A second daily note per day.** Right-click any day cell to open or create a second daily note alongside the primary one — useful for meeting logs, call notes, or keeping work and personal notes separate. It has its own folder, date format, and template.
 
 There are also many bug fixes that bring both the calendar view and periodic note functionality up to modern Obsidian plugin standards.
 
@@ -15,6 +16,7 @@ There are also many bug fixes that bring both the calendar view and periodic not
 - A calendar view for navigating your vault by date.
 - Built-in periodic notes for daily, weekly, monthly, quarterly, and yearly periodicities. Each periodicity has its own folder, filename format, and optional template — no separate Periodic Notes plugin required.
 - Click a day cell to open or create that day's note. Click a week-number cell to open or create the weekly note. Click the month, year, or quarter labels in the calendar header to open or create the corresponding monthly / yearly / quarterly note.
+- **Second Daily Note:** right-click any day cell to open or create a second daily note for that date. It has its own folder, date format, and template — completely independent of the primary daily note. A second filled dot appears on day cells where a second daily note exists.
 - By default, a filled dot on a day cell means a periodic note exists for that day, and a dot on a week-number cell means a weekly note exists. The optional **Dot style** setting can switch this to word-count dots plus an open-task dot for daily and weekly notes.
 - The calendar view can live anywhere. Drag it to the left sidebar, into the main content area, pin it as a tab, or pop it into its own window — Calendar Plus preserves the placement across plugin reloads.
 - Theme-friendly: the calendar inherits Obsidian's CSS variables and respects the active theme out of the box.
@@ -62,6 +64,17 @@ Calendar Plus owns its own settings for all five periodic-note types and doesn't
 
 Each of the five note types — Daily, Weekly, Monthly, Quarterly, Yearly — has its own Enable toggle, Date format, Folder, and Template file setting.
 
+#### Second Daily Note
+
+An optional second daily note per day, accessed by right-clicking a day cell. Configure it independently under Settings → Calendar Plus → Periodic Notes → Second Daily Note:
+
+- **Enable** turns the feature on.
+- **Date format** is a [Moment.js format string](https://momentjs.com/docs/#/displaying/format/) for filenames. Defaults to `YYYY-MM-DD`, the same as the primary daily note — change this or use a different folder to keep the two sets of notes distinct.
+- **Folder** is where second daily notes are created. Leave blank for the vault root.
+- **Template file** is an optional path to a template for new second daily notes.
+
+When enabled, right-clicking any day cell shows a context menu. If neither note exists yet, the menu offers **Create Daily Note** and **Create Second Daily Note**. If the primary note already exists, the menu shows **Create/Open Second Daily Note** with the primary note's file actions below it. A filled dot appears on day cells where a second daily note exists, alongside any primary-note dots.
+
 #### Advanced
 
 - **Override locale**: force a specific locale for date formatting, independent of your system locale.
@@ -75,6 +88,10 @@ It's intended to. Calendar Plus uses a separate plugin id, view type, and ribbon
 ### What do the dots mean?
 
 By default, a filled dot on a day cell means a periodic note exists for that day, and a dot on a week-number cell means a weekly note exists. If you'd like dots to reflect word count and open tasks instead, switch the **Dot style** setting to "Word count and open tasks" — daily and weekly notes will then show filled dots based on word count plus one hollow dot when the note has open `- [ ]` or `* [ ]` tasks.
+
+### What is the Second Daily Note for?
+
+It's a second note you can create for any day, separate from your primary daily note. Common uses: meeting logs, call notes, work vs. personal separation, or any recurring category of notes you'd rather not mix into your main daily note. Both notes are navigable from the calendar. Enable it under Settings → Calendar Plus → Periodic Notes → Second Daily Note and configure a distinct folder or filename format to keep the two sets of files separate.
 
 ### How do I add week numbers to the calendar?
 
@@ -109,6 +126,10 @@ Add this snippet to your weekly note template to embed each day's note:
 ![[{{friday:gggg-MM-DD}}]]
 ![[{{saturday:gggg-MM-DD}}]]
 ```
+
+### Keep meeting notes separate from your daily note
+
+Enable **Second Daily Note** under Settings → Calendar Plus → Periodic Notes and set its **Folder** to somewhere like `Meetings` and its **Template file** to your meeting-note template. Right-click any day cell to create or open that day's meeting note without leaving the calendar. Both notes show dots on the day cell, so you can see at a glance which days have meetings.
 
 ### Hover preview
 
