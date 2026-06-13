@@ -122,6 +122,86 @@ export const monthlyNotes = createPeriodicNotesStore("monthly");
 export const yearlyNotes = createPeriodicNotesStore("yearly");
 export const quarterlyNotes = createPeriodicNotesStore("quarterly");
 
+// Second daily notes: same date granularity as daily, but independent folder/
+// format/template. Uses "daily" periodicity for date parsing and UID generation;
+// keyed separately from dailyNotes since it is a distinct store object.
+function createSecondDailyNotesStore() {
+  let hasError = false;
+  const store = writable<Record<string, TFile>>(null);
+  return {
+    reindex: () => {
+      const { secondDaily } = get(settings);
+      if (!secondDaily.enabled) {
+        store.set({});
+        hasError = false;
+        return;
+      }
+      try {
+        store.set(helperGetAllPeriodicNotes("daily", secondDaily));
+        hasError = false;
+      } catch (err) {
+        store.set({});
+        if (!hasError) {
+          console.log("[Calendar] Failed to find second daily notes folder", err);
+        }
+        hasError = true;
+      }
+    },
+    addFile: (file: TFile): boolean => {
+      const { secondDaily } = get(settings);
+      if (!secondDaily.enabled) return false;
+      if (!isFileInConfiguredFolder(file, secondDaily)) return false;
+      const date = getDateFromFile(file, "daily", secondDaily.format);
+      if (!date) return false;
+      const uid = getDateUID(date, "daily");
+      store.update((current) => ({ ...(current ?? {}), [uid]: file }));
+      return true;
+    },
+    removeFile: (file: TFile): boolean => {
+      const { secondDaily } = get(settings);
+      if (!secondDaily.enabled) return false;
+      if (!isFileInConfiguredFolder(file, secondDaily)) return false;
+      const date = getDateFromFile(file, "daily", secondDaily.format);
+      if (!date) return false;
+      const uid = getDateUID(date, "daily");
+      let removed = false;
+      store.update((current) => {
+        if (!current || !(uid in current)) return current;
+        removed = true;
+        const next = { ...current };
+        delete next[uid];
+        return next;
+      });
+      return removed;
+    },
+    removeByOldPath: (oldPath: string): boolean => {
+      const { secondDaily } = get(settings);
+      if (!secondDaily.enabled) return false;
+      if (!isPathInConfiguredFolder(oldPath, secondDaily)) return false;
+      const lastSlash = oldPath.lastIndexOf("/");
+      const filename = lastSlash >= 0 ? oldPath.substring(lastSlash + 1) : oldPath;
+      const oldBasename = filename.endsWith(".md")
+        ? filename.substring(0, filename.length - 3)
+        : filename;
+      const date = getDateFromFilename(oldBasename, "daily", secondDaily.format);
+      if (!date) return false;
+      const uid = getDateUID(date, "daily");
+      let removed = false;
+      store.update((current) => {
+        if (!current || !(uid in current)) return current;
+        removed = true;
+        const next = { ...current };
+        delete next[uid];
+        return next;
+      });
+      return removed;
+    },
+    ...store,
+  };
+}
+
+export const secondDailyNotes = createSecondDailyNotesStore();
+
 function createSelectedFileStore() {
   const store = writable<string>(null);
 

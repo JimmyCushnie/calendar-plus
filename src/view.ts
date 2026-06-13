@@ -3,7 +3,7 @@ import {
   getDateFromFile as helperGetDateFromFile,
   getPeriodicNote as helperGetPeriodicNote,
 } from "src/io/periodicNoteHelpers";
-import { TAbstractFile, TFile, ItemView, WorkspaceLeaf } from "obsidian";
+import { Menu, TAbstractFile, TFile, ItemView, WorkspaceLeaf } from "obsidian";
 import { get } from "svelte/store";
 
 import { TRIGGER_ON_OPEN, VIEW_TYPE_CALENDAR } from "src/constants";
@@ -12,7 +12,8 @@ import { tryToCreateWeeklyNote } from "src/io/weeklyNotes";
 import { tryToCreateMonthlyNote } from "src/io/monthlyNotes";
 import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
-import { getLeafForModifierClick } from "src/io/periodicNotes";
+import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
+import { createConfirmationDialog } from "src/ui/modal";
 import type { ISettings } from "src/settings";
 
 import Calendar from "./ui/Calendar.svelte";
@@ -24,10 +25,12 @@ import {
   monthlyNotes,
   quarterlyNotes,
   yearlyNotes,
+  secondDailyNotes,
   settings,
 } from "./ui/stores";
 import {
   customTagsSource,
+  secondDailyNoteSource,
   streakSource,
   tasksSource,
   wordCountSource,
@@ -89,6 +92,7 @@ export default class CalendarView extends ItemView {
       streakSource,
       wordCountSource,
       tasksSource,
+      secondDailyNoteSource,
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
@@ -221,15 +225,74 @@ export default class CalendarView extends ItemView {
   };
 
   private onContextMenuDay = (date: Moment, event: MouseEvent): void => {
-    if (!this.settings.daily.enabled) return;
-    const note = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
-    if (!note) {
+    const { secondDaily, daily } = this.settings;
+    const position = { x: event.pageX, y: event.pageY };
+
+    if (secondDaily.enabled) {
+      const menu = new Menu(this.app);
+      const secondNote = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
+      menu.addItem((item) =>
+        item
+          .setTitle(secondNote ? "Open Second Daily Note" : "Create Second Daily Note")
+          .setIcon("notebook")
+          .setSection("second-daily")
+          .onClick(() => void this.openOrCreateSecondDailyNote(date, false))
+      );
+      // If a primary daily note exists, add its standard file-menu items below.
+      if (daily.enabled) {
+        const primaryNote = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
+        if (primaryNote) {
+          this.app.workspace.trigger(
+            "file-menu",
+            menu,
+            primaryNote,
+            "calendar-context-menu",
+            null
+          );
+        }
+      }
+      menu.showAtPosition(position);
       return;
     }
-    showFileMenu(this.app, note, {
-      x: event.pageX,
-      y: event.pageY,
-    });
+
+    // Fallback: existing behavior when second daily is not enabled.
+    if (!daily.enabled) return;
+    const note = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
+    if (!note) return;
+    showFileMenu(this.app, note, position);
+  };
+
+  private openOrCreateSecondDailyNote = async (
+    date: Moment,
+    ctrlPressed: boolean
+  ): Promise<void> => {
+    if (!this.settings.secondDaily.enabled) return;
+    const { workspace } = this.app;
+    const existingFile = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
+
+    if (!existingFile) {
+      const secondDailySettings = this.settings.secondDaily;
+      const filename = date.format(secondDailySettings.format);
+      const create = async () => {
+        const file = await createPeriodicNote("daily", date, secondDailySettings);
+        const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
+        await leaf.openFile(file, { active: true });
+      };
+      if (this.settings.shouldConfirmBeforeCreate) {
+        createConfirmationDialog({
+          cta: "Create",
+          onAccept: create,
+          text: `File ${filename} does not exist. Would you like to create it?`,
+          title: "New Second Daily Note",
+        });
+      } else {
+        await create();
+      }
+      return;
+    }
+
+    const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
+    await leaf.openFile(existingFile);
   };
 
   private onContextMenuWeek = (date: Moment, event: MouseEvent): void => {
@@ -287,6 +350,7 @@ export default class CalendarView extends ItemView {
       monthlyNotes.removeFile(file),
       quarterlyNotes.removeFile(file),
       yearlyNotes.removeFile(file),
+      secondDailyNotes.removeFile(file),
     ].some(Boolean);
     if (changed) {
       this.updateActiveFile();
@@ -313,6 +377,7 @@ export default class CalendarView extends ItemView {
       monthlyNotes.addFile(file),
       quarterlyNotes.addFile(file),
       yearlyNotes.addFile(file),
+      secondDailyNotes.addFile(file),
     ].some(Boolean);
     if (changed) {
       this.calendar.tick();
@@ -331,6 +396,7 @@ export default class CalendarView extends ItemView {
       monthlyNotes.removeByOldPath(oldPath),
       quarterlyNotes.removeByOldPath(oldPath),
       yearlyNotes.removeByOldPath(oldPath),
+      secondDailyNotes.removeByOldPath(oldPath),
     ].some(Boolean);
     const added = [
       dailyNotes.addFile(file),
@@ -338,6 +404,7 @@ export default class CalendarView extends ItemView {
       monthlyNotes.addFile(file),
       quarterlyNotes.addFile(file),
       yearlyNotes.addFile(file),
+      secondDailyNotes.addFile(file),
     ].some(Boolean);
     if (removed || added) {
       this.updateActiveFile();

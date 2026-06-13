@@ -72,6 +72,7 @@ export interface ISettings {
   monthly: PeriodicNoteSettings;
   quarterly: PeriodicNoteSettings;
   yearly: PeriodicNoteSettings;
+  secondDaily: PeriodicNoteSettings;
 }
 
 const weekdays = [
@@ -128,6 +129,12 @@ export const defaultSettings = Object.freeze({
     folder: "",
     template: "",
   } as PeriodicNoteSettings,
+  secondDaily: {
+    enabled: false,
+    format: DEFAULT_DAILY_NOTE_FORMAT,
+    folder: "",
+    template: "",
+  } as PeriodicNoteSettings,
 });
 
 export class CalendarSettingsTab extends PluginSettingTab {
@@ -167,6 +174,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
     this.displayPeriodicNoteSettings("monthly", "Monthly notes", DEFAULT_MONTHLY_NOTE_FORMAT);
     this.displayPeriodicNoteSettings("quarterly", "Quarterly notes", DEFAULT_QUARTERLY_NOTE_FORMAT);
     this.displayPeriodicNoteSettings("yearly", "Yearly notes", DEFAULT_YEARLY_NOTE_FORMAT);
+    this.displaySecondDailyNoteSettings();
 
     new Setting(this.containerEl).setName("Locale").setHeading();
     this.addLocaleOverrideSetting();
@@ -433,6 +441,76 @@ export class CalendarSettingsTab extends PluginSettingTab {
           await this.plugin.writeOptions((prev) => ({
             [periodicity]: { ...prev[periodicity], template: value },
           } as Partial<ISettings>));
+        });
+        new FileSuggest(this.app, text.inputEl);
+      });
+  }
+
+  private displaySecondDailyNoteSettings(): void {
+    const sectionEl = this.containerEl.createDiv();
+    this.renderSecondDailySection(sectionEl);
+  }
+
+  private renderSecondDailySection(sectionEl: HTMLElement): void {
+    sectionEl.empty();
+    const pnSettings = this.plugin.options.secondDaily;
+
+    new Setting(sectionEl).setName("Second Daily Note").setHeading();
+
+    new Setting(sectionEl)
+      .setName("Enable")
+      .setDesc(
+        "Allow the creation of a second daily note each day. Useful for meeting logs, keeping personal and work separate, etc. Access via right-click on any day cell."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(pnSettings.enabled);
+        toggle.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            secondDaily: { ...prev.secondDaily, enabled: value },
+          }));
+          this.renderSecondDailySection(sectionEl);
+        });
+      });
+
+    if (!pnSettings.enabled) return;
+
+    new Setting(sectionEl)
+      .setName("Date format")
+      .setDesc("Moment.js format string for note filenames")
+      .addText((text) => {
+        text.setPlaceholder(DEFAULT_DAILY_NOTE_FORMAT);
+        text.setValue(pnSettings.format);
+        text.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            secondDaily: { ...prev.secondDaily, format: value },
+          }));
+        });
+      });
+
+    new Setting(sectionEl)
+      .setName("Folder")
+      .setDesc("Notes are created here. Leave blank for vault root.")
+      .addText((text) => {
+        text.setPlaceholder("Example: folder/subfolder");
+        text.setValue(pnSettings.folder);
+        text.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            secondDaily: { ...prev.secondDaily, folder: value },
+          }));
+        });
+        new FolderSuggest(this.app, text.inputEl);
+      });
+
+    new Setting(sectionEl)
+      .setName("Template file")
+      .setDesc("Path to template file. Leave blank for no template.")
+      .addText((text) => {
+        text.setPlaceholder("Example: templates/call-notes");
+        text.setValue(pnSettings.template);
+        text.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            secondDaily: { ...prev.secondDaily, template: value },
+          }));
         });
         new FileSuggest(this.app, text.inputEl);
       });

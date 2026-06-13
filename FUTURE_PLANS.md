@@ -2,6 +2,17 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
+## Optional: visually distinguish the Second Daily Note dot (deferred)
+
+Currently the second daily note dot is a plain filled dot (same as the primary daily note dot), so a day with both notes shows two identical filled circles. This works but doesn't communicate the distinction clearly.
+
+Options considered:
+- **Hollow dot** (`isFilled: false`) — already supported by `Dot.svelte`, one-line change. Ambiguous in `dotMode: "word-count-tasks"` where a hollow dot already signals open tasks.
+- **Accent-colored dot** — keep filled but add a CSS rule targeting `.dot.second-daily` using `--text-accent` or similar. The `className: "second-daily"` hook is already on the dot, so this is just a few lines in `styles.css`. Works in both dot modes, no layout changes.
+- **Dot above the date** — separate container above the date number instead of sharing the `.dot-container` below. Unambiguous but requires a layout change to `Day.svelte`.
+
+The accent-colored dot is probably the cleanest approach when this is revisited. The `className: "second-daily"` is already in `src/ui/sources/secondDailyNote.ts`.
+
 ## Optional: settings UI modernization (deferred)
 
 Migrating the settings tab to Svelte would potentially give cleaner conditional UI (`{#if}` blocks instead of imperative `.empty()` + rebuild), easier slide / fade animations on enable-toggle expansion, and less imperative DOM rebuilding overall.

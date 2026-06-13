@@ -120,11 +120,12 @@ export default class CalendarPlugin extends Plugin {
       // Per-period objects need a one-level merge so a partial saved object
       // (e.g. { enabled: true, format: "YYYY-MM-DD" }) doesn't wipe folder /
       // template defaults from the parent spread above.
-      daily:     { ...old.daily,     ...(options.daily     ?? {}) },
-      weekly:    { ...old.weekly,    ...(options.weekly    ?? {}) },
-      monthly:   { ...old.monthly,   ...(options.monthly   ?? {}) },
-      quarterly: { ...old.quarterly, ...(options.quarterly ?? {}) },
-      yearly:    { ...old.yearly,    ...(options.yearly    ?? {}) },
+      daily:       { ...old.daily,       ...(options.daily       ?? {}) },
+      weekly:      { ...old.weekly,      ...(options.weekly      ?? {}) },
+      monthly:     { ...old.monthly,     ...(options.monthly     ?? {}) },
+      quarterly:   { ...old.quarterly,   ...(options.quarterly   ?? {}) },
+      yearly:      { ...old.yearly,      ...(options.yearly      ?? {}) },
+      secondDaily: { ...old.secondDaily, ...(options.secondDaily ?? {}) },
     }));
 
     await this.saveData(this.options);

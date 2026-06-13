@@ -10,7 +10,7 @@
   import type { ISettings } from "src/settings";
   import { moment } from "src/types/moment";
   import type { Moment } from "src/types/moment";
-  import { activeFile, dailyNotes, monthlyNotes, quarterlyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
+  import { activeFile, dailyNotes, monthlyNotes, quarterlyNotes, secondDailyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
 
   let today: Moment;
 
@@ -41,6 +41,7 @@
     monthlyNotes.reindex();
     yearlyNotes.reindex();
     quarterlyNotes.reindex();
+    secondDailyNotes.reindex();
     return moment();
   }
 
