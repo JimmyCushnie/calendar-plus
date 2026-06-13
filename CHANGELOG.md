@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.9.0
+
+Focus: Second Daily Note — a second, independent daily note per day.
+
+New feature: Second Daily Note
+- Right-click any day cell to open or create a second daily note for that date, alongside the primary daily note. Useful for meeting logs, call notes, or keeping work and personal notes separate.
+- The second daily note has its own folder, date format, and template — completely independent of the primary daily note. Disabled by default; enable it under Settings → Calendar Plus → Periodic Notes → Second Daily Note.
+- Right-click context menu: when neither note exists, the menu offers "Create Daily Note" and "Create Second Daily Note." When a second daily note exists, it offers "Open Second Daily Note" and "Delete Second Daily Note" (deletion respects your Obsidian trash preference). If the primary note also exists, its standard file actions appear below.
+- A second, half-opacity dot appears on day cells where a second daily note exists, distinguishing it from the full-opacity primary-note dot.
+
+Behavior notes
+- Left-click behavior is unchanged: it always opens the primary daily note.
+- Second daily notes do not affect the active-note highlight; only primary daily and weekly notes drive cell highlighting.
+- When Second Daily Note is disabled, day-cell right-click behavior is unchanged.
+
 ## 1.8.3
 
 Focus: active-note highlighting reliability. No note path/date/template behavior changes.
