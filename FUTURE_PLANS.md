@@ -2,6 +2,20 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
+## Optional: richer context menu for existing Second Daily Notes (deferred)
+
+When a second daily note already exists, the day context menu shows "Open Second Daily Note" but no file-management actions for it. The primary daily note gets the full Obsidian file menu (delete, rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note gets none of that.
+
+The gap is most obvious for:
+- **Reveal in file explorer / navigation** — no way to jump to the second daily note's location from the calendar.
+- **Delete** — can't remove a second daily note from the context menu; user has to find it in the file explorer.
+- **Open in new tab / split** — the "Open Second Daily Note" item always uses the current pane (modifier-click is not wired into the context menu path).
+- **Third-party plugin items** — plugins that add items to the `file-menu` event (e.g. templating plugins, sync plugins) only see the primary note, not the second.
+
+Fix: when a second daily note exists, trigger `app.workspace.trigger("file-menu", menu, secondNote, "calendar-context-menu", null)` on the same menu after the "Open Second Daily Note" item, then add a separator before the primary note's file-menu items (if the primary note also exists). This mirrors how the primary note's file ops are currently appended and gives the second note the same Obsidian-standard treatment.
+
+The section/separator ordering would become: second-daily actions → second-daily file-menu items → [separator] → primary daily file-menu items.
+
 ## Optional: visually distinguish the Second Daily Note dot (deferred)
 
 Currently the second daily note dot is a plain filled dot (same as the primary daily note dot), so a day with both notes shows two identical filled circles. This works but doesn't communicate the distinction clearly.
