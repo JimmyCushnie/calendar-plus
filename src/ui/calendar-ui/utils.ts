@@ -9,6 +9,12 @@ export function isMetaPressed(e: MouseEvent): boolean {
   return Platform.isMacOS ? e.metaKey : e.ctrlKey;
 }
 
+// Option (macOS) / Alt (Windows/Linux). Cross-platform via the single
+// `altKey` flag. Used on day cells to open an existing second daily note.
+export function isAltPressed(e: MouseEvent): boolean {
+  return e.altKey;
+}
+
 export function getDaysOfWeek(..._args: unknown[]): string[] {
   return moment.weekdaysShort(true);
 }

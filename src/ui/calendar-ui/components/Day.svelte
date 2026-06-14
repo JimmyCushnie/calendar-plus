@@ -7,7 +7,7 @@
   import Dot from "./Dot.svelte";
   import MetadataResolver from "./MetadataResolver.svelte";
   import type { IDayMetadata } from "../types";
-  import { isMetaPressed, isWeekend } from "../utils";
+  import { isAltPressed, isMetaPressed, isWeekend } from "../utils";
 
   // Properties
   export let date: Moment;
@@ -17,7 +17,11 @@
     targetEl: EventTarget,
     isMetaPressed: boolean
   ) => boolean;
-  export let onClick: (date: Moment, isMetaPressed: boolean) => boolean;
+  export let onClick: (
+    date: Moment,
+    isMetaPressed: boolean,
+    isAltPressed?: boolean
+  ) => boolean;
   export let onContextMenu: (date: Moment, event: MouseEvent) => boolean;
 
   // Global state
@@ -38,7 +42,7 @@
       class:today="{date.isSame(today, 'day')}"
       class:has-background-image="{!!metadata.backgroundImage}"
       style="{metadata.backgroundImage ? `background-image: url("${metadata.backgroundImage}")` : ''}"
-      on:click="{onClick && ((e) => onClick(date, isMetaPressed(e)))}"
+      on:click="{onClick && ((e) => onClick(date, isMetaPressed(e), isAltPressed(e)))}"
       on:contextmenu="{onContextMenu && ((e) => onContextMenu(date, e))}"
       on:pointerover="{onHover &&
         ((e) => onHover(date, e.target, isMetaPressed(e)))}"

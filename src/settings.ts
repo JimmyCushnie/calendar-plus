@@ -196,11 +196,11 @@ export class CalendarSettingsTab extends PluginSettingTab {
       text: "Calendar manages periodic notes directly. To use existing notes, enter the same folder and date format you already use.",
     });
     this.displayPeriodicNoteSettings("daily", "Daily notes", DEFAULT_DAILY_NOTE_FORMAT);
+    this.displaySecondDailyNoteSettings();
     this.displayPeriodicNoteSettings("weekly", "Weekly notes", DEFAULT_WEEKLY_NOTE_FORMAT);
     this.displayPeriodicNoteSettings("monthly", "Monthly notes", DEFAULT_MONTHLY_NOTE_FORMAT);
     this.displayPeriodicNoteSettings("quarterly", "Quarterly notes", DEFAULT_QUARTERLY_NOTE_FORMAT);
     this.displayPeriodicNoteSettings("yearly", "Yearly notes", DEFAULT_YEARLY_NOTE_FORMAT);
-    this.displaySecondDailyNoteSettings();
 
     new Setting(this.containerEl).setName("Locale").setHeading();
     this.addLocaleOverrideSetting();
@@ -253,7 +253,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
 
   addShowYearOverviewSetting(): void {
     new Setting(this.containerEl)
-      .setName("Show year navigator button")
+      .setName("Show history navigator button")
       .setDesc(
         "Add a button to the calendar header that opens a 12-month grid for quickly jumping between months and years."
       )
@@ -558,7 +558,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
     sectionEl.empty();
     const pnSettings = this.plugin.options.secondDaily;
 
-    new Setting(sectionEl).setName("Second Daily Note").setHeading();
+    new Setting(sectionEl).setName("Second daily notes").setHeading();
 
     new Setting(sectionEl)
       .setName("Enable")

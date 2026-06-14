@@ -238,11 +238,29 @@ export default class CalendarView extends ItemView {
         : null;
       const secondNote = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
 
-      // "Create Daily Note" first, no divider — both items share the same section.
-      if (daily.enabled && !primaryNote) {
+      // Daily note actions. When the note exists, offer Open + Delete in their
+      // own section at the top — mirroring the second daily note's Open/Delete
+      // items. When it doesn't, the single "Create Daily Note" stays grouped
+      // with the second daily create item below (no divider, same section).
+      if (daily.enabled && primaryNote) {
         menu.addItem((item) =>
           item
-            .setTitle("Create Daily Note")
+            .setTitle("Open daily note")
+            .setIcon("calendar-days")
+            .setSection("calendar-daily")
+            .onClick(() => void this.openOrCreateDailyNote(date, false))
+        );
+        menu.addItem((item) =>
+          item
+            .setTitle("Delete daily note")
+            .setIcon("trash")
+            .setSection("calendar-daily")
+            .onClick(() => void this.app.fileManager.trashFile(primaryNote))
+        );
+      } else if (daily.enabled && !primaryNote) {
+        menu.addItem((item) =>
+          item
+            .setTitle("Create daily note")
             .setIcon("calendar-plus")
             .setSection("calendar-actions")
             .onClick(() => void this.openOrCreateDailyNote(date, false))
@@ -250,7 +268,7 @@ export default class CalendarView extends ItemView {
       }
       menu.addItem((item) =>
         item
-          .setTitle(secondNote ? "Open Second Daily Note" : "Create Second Daily Note")
+          .setTitle(secondNote ? "Open second daily note" : "Create second daily note")
           .setIcon("notebook")
           .setSection("calendar-actions")
           .onClick(() => void this.openOrCreateSecondDailyNote(date, false))
@@ -258,7 +276,7 @@ export default class CalendarView extends ItemView {
       if (secondNote) {
         menu.addItem((item) =>
           item
-            .setTitle("Delete Second Daily Note")
+            .setTitle("Delete second daily note")
             .setIcon("trash")
             .setSection("calendar-actions")
             .onClick(() => void this.app.fileManager.trashFile(secondNote))
@@ -550,10 +568,26 @@ export default class CalendarView extends ItemView {
 
   openOrCreateDailyNote = async (
     date: Moment,
-    ctrlPressed: boolean
+    ctrlPressed: boolean,
+    altPressed = false
   ): Promise<void> => {
-    if (!this.settings.daily.enabled) return;
     const { workspace } = this.app;
+
+    // Option/Alt + click is dedicated to the second daily note: open it if one
+    // exists, otherwise do nothing (creation stays a right-click action). Falls
+    // through to the normal primary-note flow when second daily is disabled, so
+    // Alt is a no-op in that case. Second daily notes don't drive the
+    // active-file highlight, so we don't call activeFile.setFile here.
+    if (altPressed && this.settings.secondDaily.enabled) {
+      const second = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
+      if (second) {
+        const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
+        await leaf.openFile(second);
+      }
+      return;
+    }
+
+    if (!this.settings.daily.enabled) return;
     const existingFile = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
     if (!existingFile) {
       void tryToCreateDailyNote(
