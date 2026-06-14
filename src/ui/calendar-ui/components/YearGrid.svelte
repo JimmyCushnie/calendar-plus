@@ -1,8 +1,6 @@
 <svelte:options immutable />
 
 <script lang="ts">
-  import { Platform } from "obsidian";
-
   import { moment } from "src/types/moment";
   import type { Moment } from "src/types/moment";
 
@@ -19,15 +17,13 @@
   export let incrementDisplayedYear: () => void;
   export let decrementDisplayedYear: () => void;
 
-  let isMobile = Platform.isMobile;
-
   // Localized short month names, Jan..Dec (index = month number).
   $: monthLabels = moment.monthsShort();
   $: displayedYear = displayedMonth.year();
   $: isCurrentYear = displayedYear === today.year();
 </script>
 
-<div class="year-overview" class:is-mobile="{isMobile}">
+<div class="year-overview">
   <div class="year-nav">
     <Arrow direction="left" onClick="{decrementDisplayedYear}" />
     <span class="year-label">{displayedYear}</span>

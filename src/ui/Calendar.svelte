@@ -33,7 +33,11 @@
   export let sources: ICalendarSource[];
   export let onHoverDay: (date: Moment, targetEl: EventTarget) => boolean;
   export let onHoverWeek: (date: Moment, targetEl: EventTarget) => boolean;
-  export let onClickDay: (date: Moment, isMetaPressed: boolean) => boolean;
+  export let onClickDay: (
+    date: Moment,
+    isMetaPressed: boolean,
+    isAltPressed?: boolean
+  ) => boolean;
   export let onClickWeek: (date: Moment, isMetaPressed: boolean) => boolean;
   export let onClickMonth: (date: Moment, isMetaPressed: boolean) => boolean;
   export let onClickYear: (date: Moment, isMetaPressed: boolean) => boolean;

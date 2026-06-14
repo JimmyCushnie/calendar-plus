@@ -90,6 +90,18 @@ For active-file updates specifically, `tick()` is probably redundant: the `activ
 
 Revisit only as part of an intentional `view.ts` simplification pass, not opportunistically.
 
+## Code-review audit follow-ups (2.0.0 work)
+
+Catalogued from a full audit of the unreleased 2.0.0 features (Second Daily Note, Feature Images, year navigator). The first four items (settings heading casing → "Feature images" / "Periodic notes"; removing the dead `is-mobile` plumbing from `YearGrid.svelte`; array-valued frontmatter handling in `getFeatureImageUrl`; widening the day-click types to include the optional `isAltPressed` arg) were **applied during the audit** and are no longer pending. The two remaining items are below.
+
+### Keyboard accessibility for the vendored calendar (deferred — slightly higher priority)
+
+Every interactive element in `src/ui/calendar-ui/` (day cells, week-number cells, nav arrows, Today button, the history button, the year popup, month cells) is a `<div on:click>` — not keyboard-focusable or operable, with no ARIA roles. The year-navigator and history button follow the same established pattern (internally consistent), and the history button intentionally has no `aria-label` (removed to suppress the hover tooltip; the nav/year arrows lost their tooltips too). A real fix is a library-wide pass converting these to real `<button>`s or adding `role`/`tabindex`/`keydown` handlers, and re-deciding tooltips vs. accessible names. Substantial and behavior-touching across the vendored components, so still out of scope for 2.0.0 — but flagged as a **slightly higher-priority** deferred item to schedule as its own accessibility milestone rather than leaving indefinitely.
+
+### Year-overview popup anchoring (low priority — review only)
+
+The `.year-popup` in the vendored `Calendar.svelte` is anchored at a fixed `top: 42px; right: 8px`. Two consequences: (a) when quarterly notes are enabled the header (`Nav`) is taller, so the popup can overlap the weekday header row; (b) the history button sits at the **left** of the `.right-nav` cluster, but the popup opens at the container's right edge, so it isn't directly under the button. **The current behavior is accepted** — it overlays cleanly and is usable as-is. Keep as a low-priority "review only" note; revisit only if the overlap or off-button placement becomes bothersome in practice. Fix options if taken on: measure the header/button position, or anchor the popup relative to the button element.
+
 ## Accepted Obsidian checker behavior recommendations
 
 After 1.7.14 the checker has no source-code Errors and reports a small residual set of warnings (see the section above). The two **Behavior** recommendations it reports separately are deliberate architectural choices documented below so future sessions don't try to "fix" them without understanding the trade-off.

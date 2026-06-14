@@ -39,7 +39,11 @@
   export let onContextMenuDay: (date: Moment, event: MouseEvent) => boolean;
   export let onContextMenuWeek: (date: Moment, event: MouseEvent) => boolean;
   export let quarterVisible: boolean;
-  export let onClickDay: (date: Moment, isMetaPressed: boolean) => boolean;
+  export let onClickDay: (
+    date: Moment,
+    isMetaPressed: boolean,
+    isAltPressed?: boolean
+  ) => boolean;
   export let onClickWeek: (date: Moment, isMetaPressed: boolean) => boolean;
   export let onClickMonth: (date: Moment, isMetaPressed: boolean) => boolean;
   export let onClickYear: (date: Moment, isMetaPressed: boolean) => boolean;

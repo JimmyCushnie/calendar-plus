@@ -190,7 +190,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
     this.displayWeekendSection();
     this.displayFeatureImageSection();
 
-    new Setting(this.containerEl).setName("Periodic Notes").setHeading();
+    new Setting(this.containerEl).setName("Periodic notes").setHeading();
     this.containerEl.createEl("p", {
       cls: "setting-item-description",
       text: "Calendar manages periodic notes directly. To use existing notes, enter the same folder and date format you already use.",
@@ -394,7 +394,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
   private renderFeatureImageSection(sectionEl: HTMLElement): void {
     sectionEl.empty();
 
-    new Setting(sectionEl).setName("Feature Images").setHeading();
+    new Setting(sectionEl).setName("Feature images").setHeading();
 
     new Setting(sectionEl)
       .setName("Enable")

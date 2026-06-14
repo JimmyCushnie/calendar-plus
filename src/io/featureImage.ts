@@ -43,7 +43,11 @@ export function getFeatureImageUrl(
   const fm = cache.frontmatter;
   if (fm) {
     for (const prop of frontmatterProperties) {
-      const raw = fm[prop.trim()];
+      const value = fm[prop.trim()];
+      if (!value) continue;
+      // A list-valued property (YAML sequence) arrives as an array — use its
+      // first entry. Single-string values pass through unchanged.
+      const raw = Array.isArray(value) ? value[0] : value;
       if (!raw) continue;
       const linkpath = extractLinkpath(String(raw));
       if (!isImagePath(linkpath)) continue;
