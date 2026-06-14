@@ -55,16 +55,16 @@ Reasoning:
 - This is the single type-only seam that lets the Obsidian checker resolve `Moment` and `Locale` precisely. Without it, the checker's TypeScript can't follow Obsidian's `import * as Moment from 'moment'` re-export — every Moment instance access cascades into `unsafe-*` warnings (as 1.7.10 demonstrated when we tried `ReturnType<typeof moment>` and the warning count jumped by ~56).
 - 1.7.13 paired this type seam with a typed runtime seam: `src/types/moment.ts` also exports a `moment` value cast to a local `MomentFactory` interface. All six runtime moment consumers (plus the two former `const { moment } = window;` destructures in `src/settings.ts`) now import the runtime `moment` from `src/types/moment` instead of from `"obsidian"`. Runtime moment still comes from Obsidian's bundled `moment` export — the cast is type-only.
 - The deeper alternative — hand-rolling local interfaces for `Moment` and `Locale` so the source tree has zero `"moment"` imports at all — remains an option but is no longer urgent. Cost: ~50 lines of hand-rolled interface definitions covering the 16 Moment instance methods Calendar Plus uses. Risk: missing an overload or a method a future caller needs (manageable — extend the interface as needed).
+- **As of 2.0.1 this is the single remaining review warning** (the dependency cascade and Svelte-typing warnings below were both resolved). It is the lone `no-restricted-imports` flag; everything else in `npx eslint . --ext .ts` is at zero.
 - Revisit only if the Obsidian checker escalates the type-only import warning to a blocking Error, or as part of a future "zero `moment` imports" cleanup.
 
-### 2. Svelte component instance typing warnings
+### 2. Svelte component instance typing warnings — RESOLVED (2.0.1)
 
-The checker reports several "Unsafe call of an `any` typed value" warnings in `src/view.ts` on calls against `this.calendar` (the Svelte `Calendar` component reference) — specifically `tick` / `$set` / `$destroy`.
+Previously the type-aware checker flagged `this.calendar` calls in `src/view.ts` (`tick` / `$set` / `$destroy`) as `no-unsafe-*` because type-aware tooling resolves `.svelte` default imports as `any`. Resolved in 2.0.1 by introducing a local `CalendarComponent` interface (the instance surface the view calls) plus a `CalendarConstructor` cast of the `.svelte` import, and typing `private calendar: CalendarComponent`. Keep this — don't revert to `private calendar: Calendar`.
 
-Reasoning:
-- Svelte 3's component-class type generation is loose by default; the methods are typed permissively enough that the checker's `no-unsafe-call` rule fires on every call. The underlying calls work at runtime and have for many releases.
-- A proper fix needs one of: a thin typed wrapper around the generated `Calendar` Svelte component, a declaration-merge file that tightens the generated component types, or a Svelte tooling bump. Each option deserves its own focused investigation and validation pass.
-- Revisit only if the Obsidian checker starts treating these warnings as blocking errors, or as part of a dedicated Svelte typing cleanup.
+### 3. The dependency-driven warning cascade — RESOLVED (2.0.1)
+
+The 2.0.0 review showed *hundreds* of `no-unsafe-*` warnings because the `obsidian` dependency was a GitHub tarball that the review's registry-only `npm ci` couldn't fetch, leaving all types unresolved. Resolved in 2.0.1 by switching to the npm `obsidian@1.8.7` devDependency. See CLAUDE.md → "Dependency + type-aware lint" — do not reintroduce a GitHub-sourced dependency.
 
 ## Review npm audit findings for dev dependencies (deferred)
 

@@ -62,6 +62,11 @@ export interface MomentFactory {
   (): Moment;
   (input: string, format: string, strict?: boolean): Moment;
 
+  // Parse an ISO string preserving its UTC offset (used to reconstruct a
+  // stored date UID without timezone shifting). Returns a precise Moment so
+  // consumer-side `.year()` / `.month()` calls type cleanly.
+  parseZone(input: string): Moment;
+
   // Static methods (factory members) Calendar Plus calls.
   locale(): string;
   locale(loc: string): string;

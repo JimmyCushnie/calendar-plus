@@ -40,16 +40,17 @@ export function getFeatureImageUrl(
   const cache = app.metadataCache.getFileCache(file);
   if (!cache) return null;
 
-  const fm = cache.frontmatter;
+  // Obsidian types `frontmatter` as `any`; read it through `unknown` so the
+  // property access is type-safe (the reviewer's no-unsafe-* rules flag `any`).
+  const fm = cache.frontmatter as Record<string, unknown> | undefined;
   if (fm) {
     for (const prop of frontmatterProperties) {
-      const value = fm[prop.trim()];
-      if (!value) continue;
+      const value: unknown = fm[prop.trim()];
       // A list-valued property (YAML sequence) arrives as an array — use its
       // first entry. Single-string values pass through unchanged.
-      const raw = Array.isArray(value) ? value[0] : value;
-      if (!raw) continue;
-      const linkpath = extractLinkpath(String(raw));
+      const raw: unknown = Array.isArray(value) ? (value as unknown[])[0] : value;
+      if (typeof raw !== "string") continue;
+      const linkpath = extractLinkpath(raw);
       if (!isImagePath(linkpath)) continue;
       const imageFile = app.metadataCache.getFirstLinkpathDest(linkpath, file.path);
       if (imageFile instanceof TFile) {

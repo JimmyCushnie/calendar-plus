@@ -29,7 +29,7 @@ export type IWeekStartOption =
   | "saturday"
   | "locale";
 
-const langToMomentLocale = {
+const langToMomentLocale: Record<string, string> = {
   en: "en-gb",
   zh: "zh-cn",
   "zh-TW": "zh-tw",

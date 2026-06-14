@@ -36,7 +36,7 @@ export function getMonthsWithNotes(
   weekly: Record<string, TFile> | null,
   monthly: Record<string, TFile> | null
 ): boolean[] {
-  const out: boolean[] = new Array(12).fill(false);
+  const out: boolean[] = Array.from({ length: 12 }, () => false);
   fillMonthsForStore(daily, year, out);
   fillMonthsForStore(weekly, year, out);
   fillMonthsForStore(monthly, year, out);

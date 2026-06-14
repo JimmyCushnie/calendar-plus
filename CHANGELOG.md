@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.1
+
+Maintenance release — no functional or behavior changes.
+
+- Switched the `obsidian` dependency from a GitHub source to the standard npm package so the plugin's type-checking resolves cleanly in automated review environments (this clears a large set of "unsafe type" review warnings that were caused by the dependency, not by plugin behavior).
+- Tightened type safety in the feature-image, year-overview, and calendar-view code, and enabled type-aware linting in the build so these checks are enforced going forward.
+
 ## 2.0.0
 
 Welcome to version 2.0.0! This is a major feature release for Calendar Plus with some big new (optional) additions that can be toggled via settings. You can read more about them below.

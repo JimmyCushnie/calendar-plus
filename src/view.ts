@@ -37,8 +37,24 @@ import {
   wordCountSource,
 } from "./ui/sources";
 
+// The vendored Calendar Svelte component, narrowed to the instance surface
+// this view actually calls. Type-aware tooling resolves `.svelte` default
+// imports as `any`, so we cast the import to a precise constructor here to
+// keep the component calls type-safe (and quiet the no-unsafe-* lint rules
+// the Obsidian review runs).
+interface CalendarComponent {
+  tick(): void;
+  $set(props: Record<string, unknown>): void;
+  $destroy(): void;
+}
+type CalendarConstructor = new (options: {
+  target: HTMLElement;
+  props: Record<string, unknown>;
+}) => CalendarComponent;
+const CalendarComponentCtor = Calendar as unknown as CalendarConstructor;
+
 export default class CalendarView extends ItemView {
-  private calendar: Calendar;
+  private calendar: CalendarComponent;
   private settings: ISettings;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -99,7 +115,7 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
-    this.calendar = new Calendar({
+    this.calendar = new CalendarComponentCtor({
       target: this.contentEl,
       props: {
         onClickDay: this.openOrCreateDailyNote,
