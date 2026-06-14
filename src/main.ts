@@ -125,7 +125,8 @@ export default class CalendarPlugin extends Plugin {
       monthly:     { ...old.monthly,     ...(options.monthly     ?? {}) },
       quarterly:   { ...old.quarterly,   ...(options.quarterly   ?? {}) },
       yearly:      { ...old.yearly,      ...(options.yearly      ?? {}) },
-      secondDaily: { ...old.secondDaily, ...(options.secondDaily ?? {}) },
+      secondDaily:    { ...old.secondDaily,    ...(options.secondDaily    ?? {}) },
+      featureImage:   { ...old.featureImage,   ...(options.featureImage   ?? {}) },
     }));
 
     await this.saveData(this.options);

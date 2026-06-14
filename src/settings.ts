@@ -28,6 +28,18 @@ export interface PeriodicNoteSettings {
   template: string;
 }
 
+export interface FeatureImageSettings {
+  enabled: boolean;
+  /**
+   * Frontmatter property names to check, in priority order. The first
+   * property that contains a path to a vault image file is used. Stored as
+   * an array; the settings UI shows a comma-separated text field.
+   */
+  frontmatterProperties: string[];
+  /** When true, weekly-note cells also show feature images. */
+  showForWeekly: boolean;
+}
+
 export interface ISettings {
   weekStart: IWeekStartOption;
   shouldConfirmBeforeCreate: boolean;
@@ -63,6 +75,12 @@ export interface ISettings {
    * crowding the mobile header by default.
    */
   showTodayButtonOnMobile: boolean;
+  /**
+   * When true, render a history button in the calendar header that opens a
+   * compact 12-month year overview popup for quickly jumping between months
+   * and years. Default false (opt-in).
+   */
+  showYearOverview: boolean;
 
   localeOverride: ILocaleOverride;
 
@@ -73,6 +91,7 @@ export interface ISettings {
   quarterly: PeriodicNoteSettings;
   yearly: PeriodicNoteSettings;
   secondDaily: PeriodicNoteSettings;
+  featureImage: FeatureImageSettings;
 }
 
 const weekdays = [
@@ -96,6 +115,7 @@ export const defaultSettings = Object.freeze({
   dotMode: "exists" as "exists" | "word-count-tasks",
   wordsPerDot: 250,
   showTodayButtonOnMobile: false,
+  showYearOverview: false,
 
   localeOverride: "system-default",
 
@@ -135,6 +155,11 @@ export const defaultSettings = Object.freeze({
     folder: "",
     template: "",
   } as PeriodicNoteSettings,
+  featureImage: {
+    enabled: false,
+    frontmatterProperties: ["banner", "image", "cover"],
+    showForWeekly: true,
+  } as FeatureImageSettings,
 });
 
 export class CalendarSettingsTab extends PluginSettingTab {
@@ -161,8 +186,9 @@ export class CalendarSettingsTab extends PluginSettingTab {
     this.addCtrlClickSetting();
     this.displayDotStyleSection();
     this.addShowTodayButtonOnMobileSetting();
-    this.addWeekStartSetting();
-    this.displayWeekendShadingSection();
+    this.addShowYearOverviewSetting();
+    this.displayWeekendSection();
+    this.displayFeatureImageSection();
 
     new Setting(this.containerEl).setName("Periodic Notes").setHeading();
     this.containerEl.createEl("p", {
@@ -180,29 +206,6 @@ export class CalendarSettingsTab extends PluginSettingTab {
     this.addLocaleOverrideSetting();
   }
 
-  addWeekStartSetting(): void {
-    const localizedWeekdays = moment.weekdays();
-    const localeWeekStartNum = window._bundledLocaleWeekSpec.dow;
-    const localeWeekStart = moment.weekdays()[localeWeekStartNum];
-
-    new Setting(this.containerEl)
-      .setName("Start week on:")
-      .setDesc(
-        "Choose what day of the week to start. Select 'Locale default' to use the default specified by moment.js"
-      )
-      .addDropdown((dropdown) => {
-        dropdown.addOption("locale", `Locale default (${localeWeekStart})`);
-        localizedWeekdays.forEach((day, i) => {
-          dropdown.addOption(weekdays[i], day);
-        });
-        dropdown.setValue(this.plugin.options.weekStart);
-        dropdown.onChange(async (value) => {
-          void this.plugin.writeOptions(() => ({
-            weekStart: value as IWeekStartOption,
-          }));
-        });
-      });
-  }
   addCtrlClickSetting(): void {
     new Setting(this.containerEl)
       .setName("Ctrl/Cmd + Click Behavior")
@@ -248,14 +251,56 @@ export class CalendarSettingsTab extends PluginSettingTab {
       });
   }
 
-  private displayWeekendShadingSection(): void {
-    const sectionEl = this.containerEl.createDiv();
-    this.renderWeekendShadingSection(sectionEl);
+  addShowYearOverviewSetting(): void {
+    new Setting(this.containerEl)
+      .setName("Show year navigator button")
+      .setDesc(
+        "Add a button to the calendar header that opens a 12-month grid for quickly jumping between months and years."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.options.showYearOverview);
+        toggle.onChange(async (value) => {
+          void this.plugin.writeOptions(() => ({
+            showYearOverview: value,
+          }));
+        });
+      });
   }
 
-  private renderWeekendShadingSection(sectionEl: HTMLElement): void {
+  private displayWeekendSection(): void {
+    const sectionEl = this.containerEl.createDiv();
+    this.renderWeekendSection(sectionEl);
+  }
+
+  private renderWeekendSection(sectionEl: HTMLElement): void {
     sectionEl.empty();
 
+    new Setting(sectionEl).setName("Weekend").setHeading();
+
+    // Week start
+    const localizedWeekdays = moment.weekdays();
+    const localeWeekStartNum = window._bundledLocaleWeekSpec.dow;
+    const localeWeekStart = moment.weekdays()[localeWeekStartNum];
+
+    new Setting(sectionEl)
+      .setName("Start week on")
+      .setDesc(
+        "Choose what day of the week to start. Select 'Locale default' to use the default specified by moment.js"
+      )
+      .addDropdown((dropdown) => {
+        dropdown.addOption("locale", `Locale default (${localeWeekStart})`);
+        localizedWeekdays.forEach((day, i) => {
+          dropdown.addOption(weekdays[i], day);
+        });
+        dropdown.setValue(this.plugin.options.weekStart);
+        dropdown.onChange(async (value) => {
+          void this.plugin.writeOptions(() => ({
+            weekStart: value as IWeekStartOption,
+          }));
+        });
+      });
+
+    // Shade weekend columns
     new Setting(sectionEl)
       .setName("Shade weekend columns")
       .setDesc(
@@ -265,10 +310,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.options.shadeWeekendColumns);
         toggle.onChange(async (value) => {
           await this.plugin.writeOptions(() => ({ shadeWeekendColumns: value }));
-          // Re-render only this section's wrapper so the "Weekend days" picker
-          // appears/disappears in place. Saved `weekendDays` is untouched, so
-          // toggling back on restores the user's previous day selections.
-          this.renderWeekendShadingSection(sectionEl);
+          this.renderWeekendSection(sectionEl);
         });
       });
 
@@ -277,8 +319,6 @@ export class CalendarSettingsTab extends PluginSettingTab {
     // Locale-aware day names indexed by JS weekday: 0 = Sunday … 6 = Saturday.
     // Matches the index space used by `weekendDays` in settings and the
     // `date.day()` lookup in `isWeekend` (src/ui/calendar-ui/utils.ts).
-    const localizedWeekdays = moment.weekdays();
-
     new Setting(sectionEl)
       .setName("Weekend days")
       .setDesc(
@@ -342,6 +382,69 @@ export class CalendarSettingsTab extends PluginSettingTab {
           const parsed = value === "" ? 250 : Number(value);
           if (!Number.isFinite(parsed)) return;
           void this.plugin.writeOptions(() => ({ wordsPerDot: parsed }));
+        });
+      });
+  }
+
+  private displayFeatureImageSection(): void {
+    const sectionEl = this.containerEl.createDiv();
+    this.renderFeatureImageSection(sectionEl);
+  }
+
+  private renderFeatureImageSection(sectionEl: HTMLElement): void {
+    sectionEl.empty();
+
+    new Setting(sectionEl).setName("Feature Images").setHeading();
+
+    new Setting(sectionEl)
+      .setName("Enable")
+      .setDesc(
+        "Show the feature image from a daily or weekly note as the cell background."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.options.featureImage.enabled);
+        toggle.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            featureImage: { ...prev.featureImage, enabled: value },
+          }));
+          this.renderFeatureImageSection(sectionEl);
+        });
+      });
+
+    if (!this.plugin.options.featureImage.enabled) return;
+
+    new Setting(sectionEl)
+      .setName("Frontmatter properties")
+      .setDesc(
+        "Comma-separated frontmatter property names to check for an image path, in priority order. First matching vault image wins."
+      )
+      .addText((text) => {
+        text.setPlaceholder("banner, image, cover");
+        text.setValue(
+          this.plugin.options.featureImage.frontmatterProperties.join(", ")
+        );
+        text.onChange(async (value) => {
+          const props = value
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          await this.plugin.writeOptions((prev) => ({
+            featureImage: { ...prev.featureImage, frontmatterProperties: props },
+          }));
+        });
+      });
+
+    new Setting(sectionEl)
+      .setName("Show for weekly notes")
+      .setDesc(
+        "Show feature images on weekly note cells in addition to daily note cells."
+      )
+      .addToggle((toggle) => {
+        toggle.setValue(this.plugin.options.featureImage.showForWeekly);
+        toggle.onChange(async (value) => {
+          await this.plugin.writeOptions((prev) => ({
+            featureImage: { ...prev.featureImage, showForWeekly: value },
+          }));
         });
       });
   }

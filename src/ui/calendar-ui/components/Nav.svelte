@@ -20,6 +20,12 @@
   // by default to keep the mobile header uncrowded. Desktop always shows
   // the Today button regardless of this prop.
   export let showTodayButtonOnMobile: boolean = false;
+  // Year overview: `showYearOverviewButton` gates whether the history button
+  // renders (the persisted setting); `yearOverviewOpen` drives its active
+  // styling (the transient popup state); `onToggleYearOverview` opens/closes.
+  export let showYearOverviewButton: boolean = false;
+  export let yearOverviewOpen: boolean = false;
+  export let onToggleYearOverview: (() => void) | undefined = undefined;
   // Get the word 'Today' but localized to the current language
   const todayDisplayStr = today.calendar().split(/\d|\s/)[0];
   let isMobile = Platform.isMobile;
@@ -72,11 +78,28 @@
     {/if}
   </div>
   <div class="right-nav">
-    <Arrow
-      direction="left"
-      onClick="{decrementDisplayedMonth}"
-      tooltip="Previous Month"
-    />
+    {#if showYearOverviewButton}
+      <div
+        class="year-overview-toggle"
+        class:active="{yearOverviewOpen}"
+        on:click|stopPropagation="{() => onToggleYearOverview?.()}"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+          <path d="M3 3v5h5"></path>
+          <path d="M12 7v5l4 2"></path>
+        </svg>
+      </div>
+    {/if}
+    <Arrow direction="left" onClick="{decrementDisplayedMonth}" />
     {#if !isMobile || showTodayButtonOnMobile}
       <div
         class="reset-button"
@@ -88,11 +111,7 @@
         {todayDisplayStr}
       </div>
     {/if}
-    <Arrow
-      direction="right"
-      onClick="{incrementDisplayedMonth}"
-      tooltip="Next Month"
-    />
+    <Arrow direction="right" onClick="{incrementDisplayedMonth}" />
   </div>
 </div>
 
@@ -197,5 +216,33 @@
 
   .reset-button:hover {
     opacity: 0.7;
+  }
+
+  .year-overview-toggle {
+    align-items: center;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    width: 24px;
+  }
+
+  .year-overview-toggle:hover {
+    opacity: 0.7;
+  }
+
+  .is-mobile .year-overview-toggle {
+    width: 32px;
+  }
+
+  /* Light grey when off, brightening to the normal (white-ish) text color
+     when the panel is open, so the icon's state is legible without color. */
+  .year-overview-toggle svg {
+    color: var(--text-muted);
+    height: 15px;
+    width: 15px;
+  }
+
+  .year-overview-toggle.active svg {
+    color: var(--text-normal);
   }
 </style>

@@ -6,6 +6,7 @@
   import CalendarBase from "./calendar-ui/components/Calendar.svelte";
   import { configureGlobalMomentLocale } from "./calendar-ui/localization";
   import type { ICalendarSource } from "./calendar-ui/types";
+  import { getMonthsWithNotes } from "src/io/yearNotes";
 
   import type { ISettings } from "src/settings";
   import { moment } from "src/types/moment";
@@ -15,6 +16,18 @@
   let today: Moment;
 
   $: today = getToday($settings);
+
+  // Recomputed when the displayed year changes (via the year-overview arrows,
+  // which mutate the bound displayedMonth) or when any note store changes.
+  // displayedMonth defaults to `today`, which is assigned reactively and is
+  // therefore undefined at prop-init time — fall back so this never throws
+  // during the first flush (a throw here blanks the whole calendar).
+  $: monthsWithNotes = getMonthsWithNotes(
+    (displayedMonth ?? today ?? moment()).year(),
+    $dailyNotes,
+    $weeklyNotes,
+    $monthlyNotes
+  );
 
   export let displayedMonth: Moment = today;
   export let sources: ICalendarSource[];
@@ -91,5 +104,7 @@
     quarterVisible={$settings.quarterly.enabled}
     weekendDays={$settings.weekendDays}
     showTodayButtonOnMobile={$settings.showTodayButtonOnMobile}
+    showYearOverview={$settings.showYearOverview}
+    {monthsWithNotes}
   />
 </div>

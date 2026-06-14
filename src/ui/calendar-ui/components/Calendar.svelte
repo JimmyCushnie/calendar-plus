@@ -9,6 +9,7 @@
   import Day from "./Day.svelte";
   import Nav from "./Nav.svelte";
   import WeekNum from "./WeekNum.svelte";
+  import YearGrid from "./YearGrid.svelte";
   import { getDailyMetadata, getWeeklyMetadata } from "../metadata";
   import type { ICalendarSource, IMonth } from "../types";
   import { getDaysOfWeek, getMonth, isWeekend } from "../utils";
@@ -45,6 +46,11 @@
   export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => boolean;
   export let onClickToday: ((date: Moment) => void) | undefined = undefined;
   export let showTodayButtonOnMobile: boolean = false;
+  // Year overview: when true, render the history button in the header that
+  // opens the 12-month grid as a popup. `monthsWithNotes` drives the
+  // per-month "has any note" dot.
+  export let showYearOverview: boolean = false;
+  export let monthsWithNotes: boolean[] = [];
   // External sources (All optional)
   export let sources: ICalendarSource[] = [];
   export let selectedId: string;
@@ -57,6 +63,28 @@
   let daysOfWeek: string[];
 
   let isMobile = Platform.isMobile;
+
+  // Year-overview popup open/close is local, transient UI state (not
+  // persisted). The history button toggles it; a window click closes it.
+  let yearOverviewOpen = false;
+
+  function toggleYearOverview() {
+    yearOverviewOpen = !yearOverviewOpen;
+  }
+
+  function incrementDisplayedYear() {
+    displayedMonth = displayedMonth.clone().add(1, "year");
+  }
+
+  function decrementDisplayedYear() {
+    displayedMonth = displayedMonth.clone().subtract(1, "year");
+  }
+
+  // Clicking a month in the popup navigates the day grid to it and closes.
+  function selectMonth(date: Moment) {
+    displayedMonth = date;
+    yearOverviewOpen = false;
+  }
 
   $: month = getMonth(displayedMonth, localeData);
   $: daysOfWeek = getDaysOfWeek(today, localeData);
@@ -75,6 +103,12 @@
   }
 </script>
 
+<svelte:window
+  on:click="{() => {
+    if (yearOverviewOpen) yearOverviewOpen = false;
+  }}"
+/>
+
 <div id="calendar-container" class="container" class:is-mobile="{isMobile}">
   <Nav
     {today}
@@ -87,8 +121,23 @@
     {onClickQuarter}
     {onClickToday}
     {showTodayButtonOnMobile}
+    showYearOverviewButton="{showYearOverview}"
+    {yearOverviewOpen}
+    onToggleYearOverview="{toggleYearOverview}"
     {resetDisplayedMonth}
   />
+  {#if yearOverviewOpen}
+    <div class="year-popup" on:click|stopPropagation>
+      <YearGrid
+        {today}
+        {displayedMonth}
+        {monthsWithNotes}
+        onSelectMonth="{selectMonth}"
+        {incrementDisplayedYear}
+        {decrementDisplayedYear}
+      />
+    </div>
+  {/if}
   <table class="calendar">
     <colgroup>
       {#if showWeekNums && !showWeekNumsRight}
@@ -175,11 +224,33 @@
 
   .container {
     padding: 0 8px;
+    /* Anchor the absolutely-positioned year-overview popup. */
+    position: relative;
     user-select: none;
   }
 
   .container.is-mobile {
     padding: 0;
+  }
+
+  /* Year-overview popup: floats over the calendar, anchored under the
+     header history button. Click-away closes it (handled in script). */
+  .year-popup {
+    position: absolute;
+    top: 42px;
+    right: 8px;
+    z-index: 20;
+    width: 220px;
+    max-width: calc(100% - 16px);
+    padding: 8px 10px 10px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    box-shadow: var(--shadow-s);
+  }
+
+  .container.is-mobile .year-popup {
+    right: 0;
   }
 
   th {

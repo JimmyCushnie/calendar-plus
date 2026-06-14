@@ -19,6 +19,8 @@ async function metadataReducer(
         ...(meta.dataAttributes ?? {}),
       },
       dots: [...(acc.dots ?? []), ...(meta.dots ?? [])],
+      // First source that provides a backgroundImage wins; later sources don't override.
+      backgroundImage: acc.backgroundImage ?? meta.backgroundImage,
     }),
     initial
   );

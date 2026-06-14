@@ -9,6 +9,8 @@ export interface IDayMetadata {
   classes?: string[];
   dataAttributes?: Record<string, string>;
   dots?: IDot[];
+  /** `app://` resource URL from vault.getResourcePath, or undefined for no image. */
+  backgroundImage?: string;
 }
 
 export interface ICalendarSource {

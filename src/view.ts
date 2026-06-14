@@ -29,6 +29,7 @@ import {
   settings,
 } from "./ui/stores";
 import {
+  createFeatureImageSource,
   customTagsSource,
   secondDailyNoteSource,
   streakSource,
@@ -48,6 +49,7 @@ export default class CalendarView extends ItemView {
     this.registerEvent(this.app.vault.on("modify", this.onFileModified));
     this.registerEvent(this.app.vault.on("rename", this.onFileRenamed));
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
+    this.registerEvent(this.app.metadataCache.on("changed", this.onMetadataCacheChanged));
 
     this.settings = null;
     this.register(
@@ -93,6 +95,7 @@ export default class CalendarView extends ItemView {
       wordCountSource,
       tasksSource,
       secondDailyNoteSource,
+      createFeatureImageSource(this.app),
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
@@ -428,6 +431,25 @@ export default class CalendarView extends ItemView {
     ].some(Boolean);
     if (removed || added) {
       this.updateActiveFile();
+    }
+  };
+
+  private onMetadataCacheChanged = (file: TFile): void => {
+    if (!this.app.workspace.layoutReady || !this.calendar) return;
+    if (!this.settings.featureImage.enabled) return;
+    // Re-tick when a daily or weekly note's metadata changes (e.g. the user
+    // edits the `banner` frontmatter property). vault.modify fires before the
+    // cache updates, so this handler is the reliable post-update trigger for
+    // frontmatter-driven feature images.
+    const isDaily =
+      this.settings.daily.enabled &&
+      helperGetDateFromFile(file, "daily", this.settings.daily.format);
+    const isWeekly =
+      this.settings.weekly.enabled &&
+      this.settings.featureImage.showForWeekly &&
+      helperGetDateFromFile(file, "weekly", this.settings.weekly.format);
+    if (isDaily || isWeekly) {
+      this.calendar.tick();
     }
   };
 

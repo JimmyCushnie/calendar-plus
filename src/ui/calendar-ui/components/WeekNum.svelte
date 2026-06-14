@@ -36,12 +36,14 @@
     <div
       class="{`week-num ${metadata.classes.join(' ')}`}"
       class:active="{selectedId === getDateUID(days[0], 'weekly')}"
+      class:has-background-image="{!!metadata.backgroundImage}"
+      style="{metadata.backgroundImage ? `background-image: url("${metadata.backgroundImage}")` : ''}"
       on:click="{onClick && ((e) => onClick(startOfWeek, isMetaPressed(e)))}"
       on:contextmenu="{onContextMenu && ((e) => onContextMenu(days[0], e))}"
       on:pointerover="{onHover &&
         ((e) => onHover(startOfWeek, e.target, isMetaPressed(e)))}"
     >
-      {weekNum}
+      <span class="week-num-number">{weekNum}</span>
       <div class="dot-container">
         {#each metadata.dots as dot}
           <Dot {...dot} />
@@ -63,7 +65,9 @@
     cursor: pointer;
     font-size: 0.8em;
     height: 100%;
+    isolation: isolate;
     padding: 4px;
+    position: relative;
     text-align: center;
     transition:
       background-color 0.1s ease-in,
@@ -84,6 +88,46 @@
     background-color: var(--interactive-accent-hover);
   }
 
+  /* Feature image support ------------------------------------------------ */
+
+  .week-num.has-background-image {
+    background-size: cover;
+    background-position: center;
+    overflow: hidden;
+  }
+
+  .week-num.has-background-image::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.35));
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .week-num.has-background-image.active {
+    background-color: transparent;
+  }
+
+  .week-num.has-background-image.active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--interactive-accent);
+    border-radius: 4px;
+    opacity: 0.65;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Wrapped purely for z-index (sits above the overlays). No visual styling
+     here — the number looks identical whether or not the cell has an image. */
+  .week-num-number {
+    position: relative;
+    z-index: 1;
+  }
+
   /* Reserve consistent space so week numbers don't shift vertically when a
      weekly-note dot appears or disappears. */
   .dot-container {
@@ -91,5 +135,7 @@
     flex-wrap: wrap;
     justify-content: center;
     min-height: 6px;
+    position: relative;
+    z-index: 1;
   }
 </style>

@@ -2,7 +2,6 @@
   import { Platform } from "obsidian";
 
   export let onClick: () => void;
-  export let tooltip: string;
   export let direction: "left" | "right";
 
   let isMobile = Platform.isMobile;
@@ -13,7 +12,6 @@
   class:is-mobile="{isMobile}"
   class:right="{direction === 'right'}"
   on:click="{onClick}"
-  aria-label="{tooltip}"
 >
   <svg
     focusable="false"
