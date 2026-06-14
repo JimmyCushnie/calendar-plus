@@ -1,19 +1,33 @@
 # Changelog
 
-## 1.9.0
+## 2.0.0
 
-Focus: Second Daily Note — a second, independent daily note per day.
+Welcome to version 2.0.0! This is a major feature release for Calendar Plus with some big new (optional) additions that can be toggled via settings. You can read more about them below.
 
 New feature: Second Daily Note
-- Right-click any day cell to open or create a second daily note for that date, alongside the primary daily note. Useful for meeting logs, call notes, or keeping work and personal notes separate.
-- The second daily note has its own folder, date format, and template — completely independent of the primary daily note. Disabled by default; enable it under Settings → Calendar Plus → Periodic Notes → Second Daily Note.
-- Right-click context menu: when neither note exists, the menu offers "Create Daily Note" and "Create Second Daily Note." When a second daily note exists, it offers "Open Second Daily Note" and "Delete Second Daily Note" (deletion respects your Obsidian trash preference). If the primary note also exists, its standard file actions appear below.
-- A second, half-opacity dot appears on day cells where a second daily note exists, distinguishing it from the full-opacity primary-note dot.
+- A second, independent daily note per day, with its own folder, date format, and template — completely separate from the primary daily note. Useful for meeting logs, call notes, or keeping work and personal notes apart. Disabled by default; enable under Settings → Calendar Plus → Second daily notes.
+- Open or create it from a day cell's right-click menu, or with Option/Alt + click on a day cell. Option/Alt + click opens an existing second daily note (it won't create one — creation stays in the right-click menu); add Cmd/Ctrl to open it in a new tab or split.
+- Right-click context menu: when a primary daily note exists, "Open daily note" and "Delete daily note" sit at the top, alongside the second daily note's open/create and delete items. Deletions respect your Obsidian trash preference, and the primary note's standard file actions still appear below.
+- A second, half-opacity dot marks day cells that have a second daily note, distinguishing it from the primary-note dot.
+
+New feature: Feature Images
+- Show a daily or weekly note's image as the day/week cell background, turning the calendar into a visual overview. Opt-in under Settings → Calendar Plus → Feature images.
+- The image is taken from the note's frontmatter — `banner`, then `image`, then `cover` by default (configurable) — falling back to the first embedded image in the note. Vault images only.
+- A subtle dark gradient keeps the date number and dots readable over any photo, and the selected day shows a translucent accent overlay so the image stays visible. The date number looks identical with or without an image.
+- Optionally extend feature images to weekly-note cells.
+
+New feature: History navigator
+- An opt-in button in the calendar header opens a compact 12-month grid for quickly jumping between months and years. Enable under Settings → Calendar Plus → "Show history navigator button."
+- Click any month to jump the calendar to it; use the year arrows to move between years. A dot marks each month that contains any daily, weekly, or monthly note.
+- The grid opens as a popup over the calendar and closes when you pick a month or click away.
+
+Other changes
+- Removed hover tooltips from the calendar's navigation arrows for more consistency. Keyboard navigation and ARIA labels will be revisited in a future pass.
 
 Behavior notes
-- Left-click behavior is unchanged: it always opens the primary daily note.
-- Second daily notes do not affect the active-note highlight; only primary daily and weekly notes drive cell highlighting.
-- When Second Daily Note is disabled, day-cell right-click behavior is unchanged.
+- Left-click on a day cell still always opens the primary daily note.
+- Second daily notes and feature images do not affect the active-note highlight; only primary daily and weekly notes drive cell highlighting.
+- All three features are off by default — existing behavior is unchanged until you enable them.
 
 ## 1.8.3
 
