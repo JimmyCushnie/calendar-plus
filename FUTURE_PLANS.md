@@ -8,7 +8,7 @@ The Second Daily Note feature (2.0.0) gives a second, independent daily note per
 
 ## Optional: richer context menu for existing Second Daily Notes (partially done, deferred)
 
-The day context menu for an existing second daily note currently has **Open Second Daily Note** and **Delete Second Daily Note** (added in 1.9.0). The primary daily note gets the full Obsidian file menu (rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note still lacks:
+The day context menu for an existing second daily note currently has **Open second daily note** and **Delete second daily note** (added in 2.0.0). The primary daily note gets the full Obsidian file menu (rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note still lacks:
 
 - **Reveal in file explorer / navigation** — no way to jump to the second daily note's location from the calendar.
 - **Open in new tab / split** — the "Open Second Daily Note" item always uses the current pane (modifier-click is not wired into the context menu path).
@@ -96,7 +96,7 @@ Revisit only as part of an intentional `view.ts` simplification pass, not opport
 
 ## Code-review audit follow-ups (2.0.0 work)
 
-Catalogued from a full audit of the unreleased 2.0.0 features (Second Daily Note, Feature Images, year navigator). The first four items (settings heading casing → "Feature images" / "Periodic notes"; removing the dead `is-mobile` plumbing from `YearGrid.svelte`; array-valued frontmatter handling in `getFeatureImageUrl`; widening the day-click types to include the optional `isAltPressed` arg) were **applied during the audit** and are no longer pending. The two remaining items are below.
+Catalogued from a full audit of the 2.0.0 features (Second Daily Note, Feature Images, year navigator). The first four items (settings heading casing → "Feature images" / "Periodic notes"; removing the dead `is-mobile` plumbing from `YearGrid.svelte`; array-valued frontmatter handling in `getFeatureImageUrl`; widening the day-click types to include the optional `isAltPressed` arg) were **applied during the audit** and are no longer pending. The two remaining items are below.
 
 ### Keyboard accessibility for the vendored calendar (deferred — slightly higher priority)
 
