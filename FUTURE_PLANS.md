@@ -2,6 +2,34 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
+## Planned: Svelte 5 + full toolchain modernization (deferred to a dedicated session)
+
+The plugin is built on 2021-era foundations (Svelte 3, TypeScript 4.2.3, ESLint 7, Rollup 2, and matching plugin versions). A modernization pass to current tooling is wanted **for its own sake** (maintainability, current Svelte/TS), independent of the plugin checker. This was investigated June 2026 via spike branches; findings below so it can be picked up cold.
+
+### Svelte SSR advisories — accepted as non-reachable, and a moving target
+
+The Obsidian checker's dependency scan flags svelte advisories. As of June 2026: svelte 3.59.2 is flagged for **GHSA-8266-84wp-wv5c** (mXSS, patched 4.2.19); `npm audit` additionally surfaces **four Feb-2026 SSR-XSS advisories** (GHSA-crpf-4hrx-3jrp, GHSA-f7gr-6p89-r883, GHSA-m56q-vw4c-c2cp, GHSA-phwv-c562-gvmh — patched only in svelte **5.51.5 / 5.53.5**). **Every one is SSR-only and not reachable in this plugin** (no SSR, no `{@html}` anywhere). svelte ships new SSR advisories regularly (these four are only months old), so **no svelte version stays advisory-clean** — chasing them via migration is whack-a-mole. **Disposition: accepted.** Do not migrate svelte *for the checker's sake*; modernize only for tooling reasons. (This is why Svelte 4 is not worth doing — see below — it still carries the four Feb-2026 advisories.)
+
+### Svelte 4 — a clean interim that we are NOT taking (documented for completeness)
+
+A spike confirmed Svelte 4 is a clean, contained bump: `svelte@4.2.20`, `svelte-check@3.8.6`, `svelte-preprocess@5.1.4`, `rollup-plugin-svelte@7.2.3` (keep `@tsconfig/svelte@1.0.10` + TS 4.2.3 — no further cascade), plus three one-line source fixes that newer svelte-check surfaces:
+- `src/types/obsidian-internal.ts`: make `AppWithKeymap.keymap` **required** (not `?`) — `App.keymap` is required in obsidian's types.
+- `src/view.ts` and `src/ui/fileMenu.ts`: `new Menu()` instead of `new Menu(app)` — obsidian's `Menu` constructor now takes 0 args.
+
+All checks pass under that set (rollup builds, tsc clean, eslint clean, svelte-check 0 errors + 19 a11y warnings). **Bonus:** svelte-check 3.x runs **without** the `mappings.wasm` flake that 1.3.0 hits, so `.svelte` files become locally verifiable (and svelte-check 3.x is what surfaced the three fixes above + the long-known a11y warnings). **But** Svelte 4 doesn't clean the checker (still carries the four Feb-2026 SSR advisories), so we're skipping it and going straight to 5 when we modernize.
+
+### Svelte 5 — the target (full toolchain rebuild, not a clean bump)
+
+`svelte@5.53.5+` (latest 5.56.3) clears the entire *current* svelte advisory set. Going there is a **full toolchain rebuild**. Spike findings:
+- **Build chain all needs bumping**: svelte 5, `svelte-check@4`, `svelte-preprocess@6`, `@tsconfig/svelte@5`, `typescript@5`, `@rollup/plugin-typescript@12`, **and** `@rollup/plugin-commonjs` + `@rollup/plugin-node-resolve` + `rollup` itself — the old commonjs plugin (18.0.0) can't even parse svelte 5's internal source (`Unexpected token` in `svelte/src/internal/client/reactivity/batch.js`).
+- **Lint cascade**: TS 5 forces `@typescript-eslint@8` which forces **ESLint 9 + flat config** (rewrite `.eslintrc.js` → `eslint.config.js`). Preserve the type-aware `no-unsafe-*` rules and the `reference/`/`main.js` ignores.
+- **Component-API rework in `view.ts`**: Svelte 5 removes `new Component()`, `$set`, and `$destroy` (the current `CalendarComponent`/`CalendarConstructor` pattern). Either migrate to `mount()` / `unmount()` + reactive props, or use `svelte/legacy`'s `createClassComponent` to keep the class API with minimal change. The exported component functions (`tick`, `incrementDisplayedMonth`, …) and the `CalendarComponent` interface must match the chosen API.
+- **TS5/Svelte5 type errors** to resolve (the spike showed "last overload" errors) and verify `<svelte:options immutable>` semantics (changed in Svelte 5).
+- **Re-check the hand-rolled moment types**: under TS 5, re-test whether deriving from Obsidian's `moment` value works (it collapsed to `any` under TS 4.2.3); if it works, the hand-rolled interfaces could be retired.
+- **Must runtime-test in Obsidian** — Svelte 5 compiles components differently; a green build is necessary but not sufficient.
+
+Approach: dedicated branch + session; bump in stages (build chain → lint chain → component API), verifying `rollup` + `svelte-check` at each stage, then load-test in Obsidian before releasing. Version: likely `2.1.0` (tooling-only) or `3.0.0` if any behavior changes.
+
 ## Idea: consider a second weekly note (undecided)
 
 The Second Daily Note feature (2.0.0) gives a second, independent daily note per day. A parallel "second weekly note" could extend the same pattern to weekly notes. **Undecided — not committed.** For now a second daily note is enough; revisit only if a concrete need for a second weekly note comes up. If pursued, it would mirror the second-daily design: a `secondWeekly: PeriodicNoteSettings` key, a dedicated store factory keyed on `"weekly"`, a self-gated dot source, and access via the week-number cell's right-click menu (and possibly Option/Alt + click), reusing the same open/create + trash patterns.
