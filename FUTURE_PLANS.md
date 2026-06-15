@@ -2,6 +2,17 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
+## NEXT UP: Svelte 5 runes + native component-API migration
+
+**This is the top-priority next piece of work** — the 2.1.0 modernization deliberately stayed on Svelte's *legacy* (non-runes) component model so the toolchain bump could land first without a behavior risk; now that it's shipped and stable, the intent is to do the runes/native migration soon. Scope:
+
+- **Migrate components to runes** (`$state` / `$derived` / `$effect` / `$props`) from the legacy `export let` / `$:` / store-subscription style, across the vendored `src/ui/calendar-ui/components/*.svelte` and `src/ui/Calendar.svelte`.
+- **Replace `createClassComponent` (`svelte/legacy`) with the native `mount()` / `unmount()` API in `src/view.ts`.** This is the proper fix for the `@typescript-eslint/no-deprecated` finding currently suppressed at `view.ts:117` (and enabled in `eslint.config.mjs`) — once migrated, remove that inline `eslint-disable` directive and its comment. `mount()` returns the component's exported functions (the current `CalendarComponent` interface's `tick`); `$set` becomes reactive `$state` props passed at mount and mutated in place; `$destroy` becomes `unmount()`.
+- **Re-verify `<svelte:options immutable>` semantics** under runes (changed in Svelte 5) and the reactive-dependency patterns that the legacy `$:` blocks + the `..._args` rest-param trigger trick in `utils.ts` currently rely on.
+- **Must runtime-test in Obsidian again** — runes compile differently; a green build is necessary but not sufficient.
+
+Do this on a dedicated branch + session, component-by-component, load-testing before release. Likely a minor bump (no user-facing change intended).
+
 ## DONE (2.1.0): Svelte 5 + full toolchain modernization
 
 **Completed in 2.1.0** (June 2026). The plugin's 2021-era foundations (Svelte 3, TypeScript 4.2.3, ESLint 7, Rollup 2) were migrated to current tooling: **Svelte 5.56.3, TypeScript 5, Rollup 4, ESLint 9 + flat config (`eslint.config.js`) with the unified `typescript-eslint` 8**, plus `svelte-check@4`, `svelte-preprocess@6`, `@tsconfig/svelte@5`, and the rollup plugin family (commonjs/node-resolve/typescript). CI build Node → 22. Done for maintainability's own sake; load-tested in Obsidian across all features with no behavior change. Key implementation decisions (kept):

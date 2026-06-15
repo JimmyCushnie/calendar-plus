@@ -114,6 +114,12 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
+    // createClassComponent is Svelte 5's documented bridge for keeping the
+    // existing legacy (non-runes) component API; Calendar Plus intentionally
+    // stayed on legacy components in the 2.1.0 modernization (no runes
+    // rewrite). A native mount()/unmount() migration is planned with the runes
+    // pass — see FUTURE_PLANS.md. Until then this deprecation is expected.
+    // eslint-disable-next-line @typescript-eslint/no-deprecated
     this.calendar = createClassComponent({
       component: Calendar,
       target: this.contentEl,

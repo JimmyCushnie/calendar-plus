@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1
+
+Maintenance release — clears the Obsidian plugin-review warnings introduced by the 2.1.0 toolchain migration. No functional or behavior change.
+
+- Listed `@eslint/js` explicitly in devDependencies.
+- Converted the ESLint flat config to ESM (`eslint.config.js` → `eslint.config.mjs`) and switched to `defineConfig()` / `globalIgnores()`, clearing the `require()` and deprecated-`config()` warnings.
+- Documented the deliberate use of Svelte 5's legacy `createClassComponent` bridge in `view.ts` (the native `mount()`/`unmount()` migration is planned with an upcoming runes pass).
+
 ## 2.1.0
 
 Toolchain modernization — **no user-facing behavior change** (verified with an Obsidian load-test across all features).
