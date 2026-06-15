@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.2
+
+Maintenance release — no functional or behavior changes.
+
+- Removed the last automated-review warnings: replaced the type-only `moment` package import with hand-rolled local type definitions (the plugin still uses Obsidian's bundled moment at runtime — no change in behavior), and updated the bundled Svelte version to clear a dependency advisory.
+
 ## 2.0.1
 
 Maintenance release — no functional or behavior changes.

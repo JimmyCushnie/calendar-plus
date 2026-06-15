@@ -1,6 +1,6 @@
 {
   "name": "calendar-plus",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Calendar view with integrated daily, weekly, monthly, quarterly, and yearly notes. An update of the Calendar plugin.",
   "author": "Matt Maiorana",
   "main": "main.js",
@@ -10,7 +10,7 @@
     "build": "npm run lint && rollup -c"
   },
   "dependencies": {
-    "svelte": "3.35.0",
+    "svelte": "3.59.2",
     "tslib": "2.1.0"
   },
   "devDependencies": {
