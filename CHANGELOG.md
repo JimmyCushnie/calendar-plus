@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.1.0
+
+Toolchain modernization — **no user-facing behavior change** (verified with an Obsidian load-test across all features).
+
+Calendar Plus was built on 2021-era foundations; this release brings the build and lint chains up to date for maintainability and to clear the recurring Svelte dependency advisories at the source.
+
+- **Svelte 3 → 5**, TypeScript → 5, Rollup → 4, and matching plugin updates. Components stay on the established Svelte syntax (no runes rewrite); the view now mounts the calendar via `createClassComponent`.
+- **ESLint 7 → 9** with the unified `typescript-eslint` package and a flat `eslint.config.js`, preserving the type-aware `no-unsafe-*` linting that mirrors the Obsidian plugin review.
+- Build Node version raised to 22 in CI.
+- Internal type-safety pass surfaced by the stricter toolchain: dropped the no-longer-needed `keymap` shim (Obsidian now types it publicly), corrected calendar event-handler types, and removed type assertions that TypeScript 5 makes redundant.
+- `minAppVersion` unchanged at 1.8.7 — existing users on older Obsidian builds are unaffected.
+
 ## 2.0.2
 
 Maintenance release — no functional or behavior changes.
