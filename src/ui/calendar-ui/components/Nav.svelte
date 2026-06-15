@@ -9,9 +9,9 @@
   export let incrementDisplayedMonth: () => void;
   export let decrementDisplayedMonth: () => void;
   export let quarterVisible: boolean;
-  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickYear: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => boolean;
+  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickYear: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
   // Optional Today-click callback. When provided, the Today button jumps to
   // the current month *and* invokes this with `today` so the parent can open
   // or create today's daily note via the same path day-cell clicks use.

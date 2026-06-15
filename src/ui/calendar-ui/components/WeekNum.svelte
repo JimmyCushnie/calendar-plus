@@ -20,12 +20,12 @@
     date: Moment,
     targetEl: EventTarget,
     isMetaPressed: boolean,
-  ) => boolean;
-  export let onClick: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onContextMenu: (date: Moment, event: MouseEvent) => boolean;
+  ) => void;
+  export let onClick: (date: Moment, isMetaPressed: boolean) => void;
+  export let onContextMenu: (date: Moment, event: MouseEvent) => void;
 
   // Global state;
-  export let selectedId: string = null;
+  export let selectedId: string | null = null;
 
   let startOfWeek: Moment;
   $: startOfWeek = getStartOfWeek(days);
@@ -34,18 +34,18 @@
 <td class:grid-right={gridRight}>
   <MetadataResolver {metadata} let:metadata>
     <div
-      class="{`week-num ${metadata.classes.join(' ')}`}"
+      class="{`week-num ${(metadata.classes ?? []).join(' ')}`}"
       class:active="{selectedId === getDateUID(days[0], 'weekly')}"
       class:has-background-image="{!!metadata.backgroundImage}"
       style="{metadata.backgroundImage ? `background-image: url("${metadata.backgroundImage}")` : ''}"
       on:click="{onClick && ((e) => onClick(startOfWeek, isMetaPressed(e)))}"
       on:contextmenu="{onContextMenu && ((e) => onContextMenu(days[0], e))}"
       on:pointerover="{onHover &&
-        ((e) => onHover(startOfWeek, e.target, isMetaPressed(e)))}"
+        ((e) => onHover(startOfWeek, e.currentTarget, isMetaPressed(e)))}"
     >
       <span class="week-num-number">{weekNum}</span>
       <div class="dot-container">
-        {#each metadata.dots as dot}
+        {#each metadata.dots ?? [] as dot}
           <Dot {...dot} />
         {/each}
       </div>

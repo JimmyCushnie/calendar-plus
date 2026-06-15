@@ -1,6 +1,5 @@
-import { App, Scope } from "obsidian";
-
-import type { AppWithKeymap } from "src/types/obsidian-internal";
+import { Scope } from "obsidian";
+import type { App } from "obsidian";
 
 // Lightweight folder/file autocomplete for text inputs in the settings tab.
 // Ported from the Daily Checklist plugin's no-Popper autocomplete. Visual
@@ -132,7 +131,7 @@ export abstract class TextInputSuggest<T> {
     this.position();
     window.addEventListener("scroll", this.repositionListener, true);
     window.addEventListener("resize", this.repositionListener);
-    (this.app as AppWithKeymap).keymap?.pushScope(this.scope);
+    this.app.keymap.pushScope(this.scope);
     this.isOpen = true;
   }
 
@@ -144,7 +143,7 @@ export abstract class TextInputSuggest<T> {
     if (!this.isOpen) return;
     window.removeEventListener("scroll", this.repositionListener, true);
     window.removeEventListener("resize", this.repositionListener);
-    (this.app as AppWithKeymap).keymap?.popScope(this.scope);
+    this.app.keymap.popScope(this.scope);
     this.suggestEl.detach();
     this.isOpen = false;
   }

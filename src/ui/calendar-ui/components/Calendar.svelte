@@ -30,24 +30,24 @@
     date: Moment,
     targetEl: EventTarget,
     isMetaPressed: boolean,
-  ) => boolean;
+  ) => void;
   export let onHoverWeek: (
     date: Moment,
     targetEl: EventTarget,
     isMetaPressed: boolean,
-  ) => boolean;
-  export let onContextMenuDay: (date: Moment, event: MouseEvent) => boolean;
-  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => boolean;
+  ) => void;
+  export let onContextMenuDay: (date: Moment, event: MouseEvent) => void;
+  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
   export let quarterVisible: boolean;
   export let onClickDay: (
     date: Moment,
     isMetaPressed: boolean,
     isAltPressed?: boolean
-  ) => boolean;
-  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickYear: (date: Moment, isMetaPressed: boolean) => boolean;
-  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => boolean;
+  ) => void;
+  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickYear: (date: Moment, isMetaPressed: boolean) => void;
+  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
   export let onClickToday: ((date: Moment) => void) | undefined = undefined;
   export let showTodayButtonOnMobile: boolean = false;
   // Year overview: when true, render the history button in the header that
@@ -57,7 +57,7 @@
   export let monthsWithNotes: boolean[] = [];
   // External sources (All optional)
   export let sources: ICalendarSource[] = [];
-  export let selectedId: string;
+  export let selectedId: string | null;
 
   // Override-able local state
   export let today: Moment = moment();

@@ -1,4 +1,5 @@
-import { TAbstractFile, TFile, TFolder } from "obsidian";
+import { TFile, TFolder } from "obsidian";
+import type { TAbstractFile } from "obsidian";
 
 import { TextInputSuggest } from "./suggest";
 

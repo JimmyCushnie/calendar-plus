@@ -1,4 +1,5 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { PluginSettingTab, Setting } from "obsidian";
+import type { App } from "obsidian";
 import { configureGlobalMomentLocale } from "src/ui/calendar-ui/localization";
 import type { ILocaleOverride, IWeekStartOption } from "src/ui/calendar-ui/localization";
 
@@ -106,13 +107,13 @@ const weekdays = [
 
 export const defaultSettings = Object.freeze({
   shouldConfirmBeforeCreate: true,
-  weekStart: "locale" as IWeekStartOption,
+  weekStart: "locale",
   ctrlClickOpensInNewTab: false,
 
   showWeeklyNoteRight: false,
   shadeWeekendColumns: false,
   weekendDays: [0, 6],
-  dotMode: "exists" as "exists" | "word-count-tasks",
+  dotMode: "exists",
   wordsPerDot: 250,
   showTodayButtonOnMobile: false,
   showYearOverview: false,
@@ -124,42 +125,42 @@ export const defaultSettings = Object.freeze({
     format: DEFAULT_DAILY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   weekly: {
     enabled: false,
     format: DEFAULT_WEEKLY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   monthly: {
     enabled: false,
     format: DEFAULT_MONTHLY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   quarterly: {
     enabled: false,
     format: DEFAULT_QUARTERLY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   yearly: {
     enabled: false,
     format: DEFAULT_YEARLY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   secondDaily: {
     enabled: false,
     format: DEFAULT_DAILY_NOTE_FORMAT,
     folder: "",
     template: "",
-  } as PeriodicNoteSettings,
+  },
   featureImage: {
     enabled: false,
     frontmatterProperties: ["banner", "image", "cover"],
     showForWeekly: true,
-  } as FeatureImageSettings,
+  },
 });
 
 export class CalendarSettingsTab extends PluginSettingTab {
@@ -477,7 +478,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
         toggle.onChange(async (value) => {
           await this.plugin.writeOptions((prev) => ({
             [periodicity]: { ...prev[periodicity], enabled: value },
-          } as Partial<ISettings>));
+          }));
           // Re-render only this section's wrapper. Calling this.display()
           // would empty the entire tab and reset the scroll container.
           this.renderPeriodicNoteSection(sectionEl, periodicity, label, defaultFormat);
@@ -516,7 +517,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
         text.onChange(async (value) => {
           await this.plugin.writeOptions((prev) => ({
             [periodicity]: { ...prev[periodicity], format: value },
-          } as Partial<ISettings>));
+          }));
         });
       });
 
@@ -529,7 +530,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
         text.onChange(async (value) => {
           await this.plugin.writeOptions((prev) => ({
             [periodicity]: { ...prev[periodicity], folder: value },
-          } as Partial<ISettings>));
+          }));
         });
         new FolderSuggest(this.app, text.inputEl);
       });
@@ -543,7 +544,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
         text.onChange(async (value) => {
           await this.plugin.writeOptions((prev) => ({
             [periodicity]: { ...prev[periodicity], template: value },
-          } as Partial<ISettings>));
+          }));
         });
         new FileSuggest(this.app, text.inputEl);
       });

@@ -75,7 +75,7 @@ export function getWordCount(text: string): number {
 export function getMonth(displayedMonth: Moment, ..._args: unknown[]): IMonth {
   const locale = moment().locale();
   const month: IMonth = [];
-  let week: IWeek;
+  let week: IWeek = { days: [], weekNum: 0 };
 
   const startOfMonth = displayedMonth.clone().locale(locale).date(1);
   const startOffset = startOfMonth.weekday();

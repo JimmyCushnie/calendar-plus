@@ -1,4 +1,4 @@
-import { App } from "obsidian";
+import type { App } from "obsidian";
 import { get } from "svelte/store";
 
 import type { Moment } from "src/types/moment";

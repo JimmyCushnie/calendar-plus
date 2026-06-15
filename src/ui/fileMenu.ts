@@ -1,9 +1,10 @@
-import { App, Menu, Point, TFile } from "obsidian";
+import { Menu } from "obsidian";
+import type { App, Point, TFile } from "obsidian";
 
 import type { AppWithDeletePrompt } from "src/types/obsidian-internal";
 
 export function showFileMenu(app: App, file: TFile, position: Point): void {
-  const fileMenu = new Menu(app);
+  const fileMenu = new Menu();
   fileMenu.addItem((item) =>
     item
       .setTitle("Delete")

@@ -1,11 +1,10 @@
-import { App, Plugin, WorkspaceLeaf } from "obsidian";
+import { Plugin } from "obsidian";
+import type { App, WorkspaceLeaf } from "obsidian";
 
 import { VIEW_TYPE_CALENDAR } from "./constants";
 import { settings } from "./ui/stores";
-import {
-  CalendarSettingsTab,
-  ISettings,
-} from "./settings";
+import { CalendarSettingsTab } from "./settings";
+import type { ISettings } from "./settings";
 import { moment } from "./types/moment";
 import type { WeekSpec } from "./types/moment";
 import CalendarView from "./view";
@@ -18,7 +17,7 @@ declare global {
 }
 
 export default class CalendarPlugin extends Plugin {
-  public options: ISettings;
+  public options!: ISettings;
 
   async onload(): Promise<void> {
     this.register(

@@ -9,13 +9,14 @@ import {
 } from "src/io/periodicNoteHelpers";
 import { get, writable } from "svelte/store";
 
-import { defaultSettings, ISettings, Periodicity } from "src/settings";
+import { defaultSettings } from "src/settings";
+import type { ISettings, Periodicity } from "src/settings";
 
 import { getDateUIDFromFile } from "./utils";
 
 function createPeriodicNotesStore(periodicity: Periodicity) {
   let hasError = false;
-  const store = writable<Record<string, TFile>>(null);
+  const store = writable<Record<string, TFile> | null>(null);
   return {
     reindex: () => {
       const currentSettings = get(settings);
@@ -127,7 +128,7 @@ export const quarterlyNotes = createPeriodicNotesStore("quarterly");
 // keyed separately from dailyNotes since it is a distinct store object.
 function createSecondDailyNotesStore() {
   let hasError = false;
-  const store = writable<Record<string, TFile>>(null);
+  const store = writable<Record<string, TFile> | null>(null);
   return {
     reindex: () => {
       const { secondDaily } = get(settings);
@@ -203,11 +204,11 @@ function createSecondDailyNotesStore() {
 export const secondDailyNotes = createSecondDailyNotesStore();
 
 function createSelectedFileStore() {
-  const store = writable<string>(null);
+  const store = writable<string | null>(null);
 
   return {
-    setFile: (file: TFile) => {
-      const id = getDateUIDFromFile(file, get(settings));
+    setFile: (file: TFile | null) => {
+      const id = file ? getDateUIDFromFile(file, get(settings)) : null;
       store.set(id);
     },
     ...store,

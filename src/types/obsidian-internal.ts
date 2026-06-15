@@ -1,4 +1,4 @@
-import type { App, Scope, TFile } from "obsidian";
+import type { App, TFile } from "obsidian";
 
 // ---------------------------------------------------------------------------
 // Typed extensions over Obsidian's undocumented (but stable in practice) APIs.
@@ -23,20 +23,6 @@ export interface AppWithFold extends App {
   foldManager?: {
     load(f: TFile): unknown;
     save(f: TFile, info: unknown): void;
-  };
-}
-
-/**
- * Extends `App` with the undocumented `keymap` push/pop-scope API.
- *
- * Calendar Plus's settings autocomplete pushes a `Scope` while the dropdown
- * is visible so its Arrow/Enter/Escape bindings take precedence over
- * Obsidian's global shortcuts, then pops it on close.
- */
-export interface AppWithKeymap extends App {
-  keymap?: {
-    pushScope(s: Scope): void;
-    popScope(s: Scope): void;
   };
 }
 

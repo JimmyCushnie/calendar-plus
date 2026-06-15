@@ -1,4 +1,5 @@
-import { App, TFile } from "obsidian";
+import { TFile } from "obsidian";
+import type { App } from "obsidian";
 
 const IMAGE_EXTENSIONS = new Set([
   "png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "avif",
@@ -40,9 +41,10 @@ export function getFeatureImageUrl(
   const cache = app.metadataCache.getFileCache(file);
   if (!cache) return null;
 
-  // Obsidian types `frontmatter` as `any`; read it through `unknown` so the
-  // property access is type-safe (the reviewer's no-unsafe-* rules flag `any`).
-  const fm = cache.frontmatter as Record<string, unknown> | undefined;
+  // `FrontMatterCache` indexes to `any`; pull each property out into an
+  // explicitly-`unknown` local so the access is type-safe (the reviewer's
+  // no-unsafe-* rules flag `any`).
+  const fm = cache.frontmatter;
   if (fm) {
     for (const prop of frontmatterProperties) {
       const value: unknown = fm[prop.trim()];

@@ -3,7 +3,9 @@ import {
   getDateFromFile as helperGetDateFromFile,
   getPeriodicNote as helperGetPeriodicNote,
 } from "src/io/periodicNoteHelpers";
-import { Menu, TAbstractFile, TFile, ItemView, WorkspaceLeaf } from "obsidian";
+import { Menu, ItemView, TFile } from "obsidian";
+import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
+import { createClassComponent } from "svelte/legacy";
 import { get } from "svelte/store";
 
 import { TRIGGER_ON_OPEN, VIEW_TYPE_CALENDAR } from "src/constants";
@@ -38,24 +40,20 @@ import {
 } from "./ui/sources";
 
 // The vendored Calendar Svelte component, narrowed to the instance surface
-// this view actually calls. Type-aware tooling resolves `.svelte` default
-// imports as `any`, so we cast the import to a precise constructor here to
-// keep the component calls type-safe (and quiet the no-unsafe-* lint rules
-// the Obsidian review runs).
+// this view actually calls. Under Svelte 5 the component is instantiated via
+// `createClassComponent` (svelte/legacy), which returns the legacy class-API
+// instance exposing `$set` / `$destroy` and the component's exported
+// functions (`tick`). Type-aware tooling resolves `.svelte` imports loosely,
+// so we cast the instance to this precise interface.
 interface CalendarComponent {
   tick(): void;
   $set(props: Record<string, unknown>): void;
   $destroy(): void;
 }
-type CalendarConstructor = new (options: {
-  target: HTMLElement;
-  props: Record<string, unknown>;
-}) => CalendarComponent;
-const CalendarComponentCtor = Calendar as unknown as CalendarConstructor;
 
 export default class CalendarView extends ItemView {
-  private calendar: CalendarComponent;
-  private settings: ISettings;
+  private calendar!: CalendarComponent;
+  private settings!: ISettings;
 
   constructor(leaf: WorkspaceLeaf) {
     super(leaf);
@@ -67,7 +65,8 @@ export default class CalendarView extends ItemView {
     this.registerEvent(this.app.workspace.on("file-open", this.onFileOpen));
     this.registerEvent(this.app.metadataCache.on("changed", this.onMetadataCacheChanged));
 
-    this.settings = null;
+    // settings.subscribe fires synchronously on registration, so this.settings
+    // is assigned immediately (the `!` declaration above reflects that).
     this.register(
       settings.subscribe((val) => {
         this.settings = val;
@@ -115,7 +114,8 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
-    this.calendar = new CalendarComponentCtor({
+    this.calendar = createClassComponent({
+      component: Calendar,
       target: this.contentEl,
       props: {
         onClickDay: this.openOrCreateDailyNote,
@@ -126,17 +126,11 @@ export default class CalendarView extends ItemView {
         onClickToday: this.onClickToday,
         onHoverDay: this.onHoverDay,
         onHoverWeek: this.onHoverWeek,
-        onHoverMonth: this.onHoverMonth,
-        onHoverYear: this.onHoverYear,
-        onHoverQuarter: this.onHoverQuarter,
         onContextMenuDay: this.onContextMenuDay,
         onContextMenuWeek: this.onContextMenuWeek,
-        onContextMenuMonth: this.onContextMenuMonth,
-        onContextMenuYear: this.onContextMenuYear,
-        onContextMenuQuarter: this.onContextMenuQuarter,
         sources,
       },
-    });
+    }) as unknown as CalendarComponent;
 
     // Initial active-file sync: file-open only catches transitions after
     // the constructor's listener attaches. If a daily/weekly note was
@@ -248,7 +242,7 @@ export default class CalendarView extends ItemView {
     const position = { x: event.pageX, y: event.pageY };
 
     if (secondDaily.enabled) {
-      const menu = new Menu(this.app);
+      const menu = new Menu();
       const primaryNote = daily.enabled
         ? helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {})
         : null;
@@ -400,7 +394,8 @@ export default class CalendarView extends ItemView {
     });
   };
 
-  private onFileDeleted = async (file: TFile): Promise<void> => {
+  private onFileDeleted = async (file: TAbstractFile): Promise<void> => {
+    if (!(file instanceof TFile)) return;
     const changed = [
       dailyNotes.removeFile(file),
       weeklyNotes.removeFile(file),
@@ -414,7 +409,8 @@ export default class CalendarView extends ItemView {
     }
   };
 
-  private onFileModified = async (file: TFile): Promise<void> => {
+  private onFileModified = async (file: TAbstractFile): Promise<void> => {
+    if (!(file instanceof TFile)) return;
     const date =
       (this.settings.daily.enabled ? helperGetDateFromFile(file, "daily", this.settings.daily.format) : null) ||
       (this.settings.weekly.enabled ? helperGetDateFromFile(file, "weekly", this.settings.weekly.format) : null) ||
@@ -426,8 +422,9 @@ export default class CalendarView extends ItemView {
     }
   };
 
-  private onFileCreated = (file: TFile): void => {
+  private onFileCreated = (file: TAbstractFile): void => {
     if (!this.app.workspace.layoutReady || !this.calendar) return;
+    if (!(file instanceof TFile)) return;
     const changed = [
       dailyNotes.addFile(file),
       weeklyNotes.addFile(file),
@@ -487,7 +484,7 @@ export default class CalendarView extends ItemView {
     }
   };
 
-  public onFileOpen = (_file: TFile): void => {
+  public onFileOpen = (_file: TFile | null): void => {
     if (this.app.workspace.layoutReady) {
       this.updateActiveFile();
     }
