@@ -1,17 +1,22 @@
 <script lang="ts">
   import { Platform } from "obsidian";
 
-  export let onClick: () => void;
-  export let direction: "left" | "right";
+  let {
+    onClick,
+    direction,
+  }: {
+    onClick: () => void;
+    direction: "left" | "right";
+  } = $props();
 
-  let isMobile = Platform.isMobile;
+  const isMobile = Platform.isMobile;
 </script>
 
 <div
   class="arrow"
-  class:is-mobile="{isMobile}"
-  class:right="{direction === 'right'}"
-  on:click="{onClick}"
+  class:is-mobile={isMobile}
+  class:right={direction === "right"}
+  onclick={onClick}
 >
   <svg
     focusable="false"

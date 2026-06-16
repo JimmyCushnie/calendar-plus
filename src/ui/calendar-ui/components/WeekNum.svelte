@@ -1,5 +1,3 @@
-<svelte:options immutable />
-
 <script lang="ts">
   import type { Moment } from "src/types/moment";
   import { getDateUID } from "src/io/periodicNoteHelpers";
@@ -9,47 +7,55 @@
   import type { IDayMetadata } from "../types";
   import { getStartOfWeek, isMetaPressed } from "../utils";
 
-  // Properties
-  export let weekNum: number;
-  export let days: Moment[];
-  export let metadata: Promise<IDayMetadata> | null;
-  export let gridRight: boolean;
+  let {
+    // Properties
+    weekNum,
+    days,
+    metadata,
+    gridRight,
+    // Event handlers
+    onHover,
+    onClick,
+    onContextMenu,
+    // Global state
+    selectedId = null,
+  }: {
+    weekNum: number;
+    days: Moment[];
+    metadata: Promise<IDayMetadata> | null;
+    gridRight: boolean;
+    onHover: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onClick: (date: Moment, isMetaPressed: boolean) => void;
+    onContextMenu: (date: Moment, event: MouseEvent) => void;
+    selectedId?: string | null;
+  } = $props();
 
-  // Event handlers
-  export let onHover: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean,
-  ) => void;
-  export let onClick: (date: Moment, isMetaPressed: boolean) => void;
-  export let onContextMenu: (date: Moment, event: MouseEvent) => void;
-
-  // Global state;
-  export let selectedId: string | null = null;
-
-  let startOfWeek: Moment;
-  $: startOfWeek = getStartOfWeek(days);
+  const startOfWeek = $derived(getStartOfWeek(days));
 </script>
 
 <td class:grid-right={gridRight}>
-  <MetadataResolver {metadata} let:metadata>
-    <div
-      class="{`week-num ${(metadata.classes ?? []).join(' ')}`}"
-      class:active="{selectedId === getDateUID(days[0], 'weekly')}"
-      class:has-background-image="{!!metadata.backgroundImage}"
-      style="{metadata.backgroundImage ? `background-image: url("${metadata.backgroundImage}")` : ''}"
-      on:click="{onClick && ((e) => onClick(startOfWeek, isMetaPressed(e)))}"
-      on:contextmenu="{onContextMenu && ((e) => onContextMenu(days[0], e))}"
-      on:pointerover="{onHover &&
-        ((e) => onHover(startOfWeek, e.currentTarget, isMetaPressed(e)))}"
-    >
-      <span class="week-num-number">{weekNum}</span>
-      <div class="dot-container">
-        {#each metadata.dots ?? [] as dot}
-          <Dot {...dot} />
-        {/each}
+  <MetadataResolver {metadata}>
+    {#snippet children(metadata)}
+      <div
+        class={`week-num ${(metadata.classes ?? []).join(" ")}`}
+        class:active={selectedId === getDateUID(days[0], "weekly")}
+        class:has-background-image={!!metadata.backgroundImage}
+        style={metadata.backgroundImage
+          ? `background-image: url("${metadata.backgroundImage}")`
+          : ""}
+        onclick={onClick && ((e) => onClick(startOfWeek, isMetaPressed(e)))}
+        oncontextmenu={onContextMenu && ((e) => onContextMenu(days[0], e))}
+        onpointerover={onHover &&
+          ((e) => onHover(startOfWeek, e.currentTarget, isMetaPressed(e)))}
+      >
+        <span class="week-num-number">{weekNum}</span>
+        <div class="dot-container">
+          {#each metadata.dots ?? [] as dot}
+            <Dot {...dot} />
+          {/each}
+        </div>
       </div>
-    </div>
+    {/snippet}
   </MetadataResolver>
 </td>
 

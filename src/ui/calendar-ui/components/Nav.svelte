@@ -3,32 +3,49 @@
   import { Platform } from "obsidian";
   import Arrow from "./Arrow.svelte";
   import { isMetaPressed } from "../utils";
-  export let displayedMonth: Moment;
-  export let today: Moment;
-  export let resetDisplayedMonth: () => void;
-  export let incrementDisplayedMonth: () => void;
-  export let decrementDisplayedMonth: () => void;
-  export let quarterVisible: boolean;
-  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickYear: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
-  // Optional Today-click callback. When provided, the Today button jumps to
-  // the current month *and* invokes this with `today` so the parent can open
-  // or create today's daily note via the same path day-cell clicks use.
-  export let onClickToday: ((date: Moment) => void) | undefined = undefined;
-  // Mobile-only opt-in: render the Today button in the mobile header. Off
-  // by default to keep the mobile header uncrowded. Desktop always shows
-  // the Today button regardless of this prop.
-  export let showTodayButtonOnMobile: boolean = false;
-  // Year overview: `showYearOverviewButton` gates whether the history button
-  // renders (the persisted setting); `yearOverviewOpen` drives its active
-  // styling (the transient popup state); `onToggleYearOverview` opens/closes.
-  export let showYearOverviewButton: boolean = false;
-  export let yearOverviewOpen: boolean = false;
-  export let onToggleYearOverview: (() => void) | undefined = undefined;
+  let {
+    displayedMonth,
+    today,
+    resetDisplayedMonth,
+    incrementDisplayedMonth,
+    decrementDisplayedMonth,
+    quarterVisible,
+    onClickMonth,
+    onClickYear,
+    onClickQuarter,
+    // Optional Today-click callback. When provided, the Today button jumps to
+    // the current month *and* invokes this with `today` so the parent can open
+    // or create today's daily note via the same path day-cell clicks use.
+    onClickToday = undefined,
+    // Mobile-only opt-in: render the Today button in the mobile header. Off
+    // by default to keep the mobile header uncrowded. Desktop always shows
+    // the Today button regardless of this prop.
+    showTodayButtonOnMobile = false,
+    // Year overview: `showYearOverviewButton` gates whether the history button
+    // renders (the persisted setting); `yearOverviewOpen` drives its active
+    // styling (the transient popup state); `onToggleYearOverview` opens/closes.
+    showYearOverviewButton = false,
+    yearOverviewOpen = false,
+    onToggleYearOverview = undefined,
+  }: {
+    displayedMonth: Moment;
+    today: Moment;
+    resetDisplayedMonth: () => void;
+    incrementDisplayedMonth: () => void;
+    decrementDisplayedMonth: () => void;
+    quarterVisible: boolean;
+    onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
+    onClickYear: (date: Moment, isMetaPressed: boolean) => void;
+    onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
+    onClickToday?: (date: Moment) => void;
+    showTodayButtonOnMobile?: boolean;
+    showYearOverviewButton?: boolean;
+    yearOverviewOpen?: boolean;
+    onToggleYearOverview?: () => void;
+  } = $props();
   // Get the word 'Today' but localized to the current language
-  const todayDisplayStr = today.calendar().split(/\d|\s/)[0];
-  let isMobile = Platform.isMobile;
+  const todayDisplayStr = $derived(today.calendar().split(/\d|\s/)[0]);
+  const isMobile = Platform.isMobile;
 
   // Function to determine the current quarter
   function getCurrentQuarter(month: number): number {
@@ -39,7 +56,7 @@
     const startMonth = (quarter - 1) * 3; // Calculate the starting month of the quarter
     return displayedMonth.clone().year(year).month(startMonth).startOf("month");
   }
-  $: currentQuarter = getCurrentQuarter(displayedMonth.month());
+  const currentQuarter = $derived(getCurrentQuarter(displayedMonth.month()));
 </script>
 
 <div class="nav" class:is-mobile="{isMobile}">
@@ -47,15 +64,15 @@
     <h3 class="title">
       <span
         class="month"
-        on:click="{(event) => {
+        onclick={(event) => {
           onClickMonth(displayedMonth, isMetaPressed(event));
-        }}">{displayedMonth.format("MMM")}</span
+        }}>{displayedMonth.format("MMM")}</span
       >
       <span
         class="year"
-        on:click="{(event) => {
+        onclick={(event) => {
           onClickYear(displayedMonth, isMetaPressed(event));
-        }}">{displayedMonth.format("YYYY")}</span
+        }}>{displayedMonth.format("YYYY")}</span
       >
     </h3>
     {#if quarterVisible}
@@ -63,12 +80,12 @@
         {#each [1, 2, 3, 4] as quarter, index}
           <span
             class="quarter"
-            class:active="{quarter === currentQuarter}"
-            on:click="{(event) =>
+            class:active={quarter === currentQuarter}
+            onclick={(event) =>
               onClickQuarter(
                 getStartOfQuarter(displayedMonth.year(), quarter),
                 isMetaPressed(event),
-              )}">Q{quarter}</span
+              )}>Q{quarter}</span
           >
           {#if index < 3}
             <span class="divider">•</span>
@@ -81,8 +98,11 @@
     {#if showYearOverviewButton}
       <div
         class="year-overview-toggle"
-        class:active="{yearOverviewOpen}"
-        on:click|stopPropagation="{() => onToggleYearOverview?.()}"
+        class:active={yearOverviewOpen}
+        onclick={(e) => {
+          e.stopPropagation();
+          onToggleYearOverview?.();
+        }}
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -99,19 +119,19 @@
         </svg>
       </div>
     {/if}
-    <Arrow direction="left" onClick="{decrementDisplayedMonth}" />
+    <Arrow direction="left" onClick={decrementDisplayedMonth} />
     {#if !isMobile || showTodayButtonOnMobile}
       <div
         class="reset-button"
-        on:click="{() => {
+        onclick={() => {
           resetDisplayedMonth();
           onClickToday?.(today);
-        }}"
+        }}
       >
         {todayDisplayStr}
       </div>
     {/if}
-    <Arrow direction="right" onClick="{incrementDisplayedMonth}" />
+    <Arrow direction="right" onClick={incrementDisplayedMonth} />
   </div>
 </div>
 

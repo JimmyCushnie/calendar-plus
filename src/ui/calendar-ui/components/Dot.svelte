@@ -1,6 +1,11 @@
 <script lang="ts">
-  export let className: string = "";
-  export let isFilled: boolean;
+  let {
+    className = "",
+    isFilled,
+  }: {
+    className?: string;
+    isFilled: boolean;
+  } = $props();
 </script>
 
 {#if isFilled}

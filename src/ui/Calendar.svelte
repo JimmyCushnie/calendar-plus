@@ -1,8 +1,4 @@
-<svelte:options immutable />
-
 <script lang="ts">
-  import { onDestroy } from "svelte";
-
   import CalendarBase from "./calendar-ui/components/Calendar.svelte";
   import { configureGlobalMomentLocale } from "./calendar-ui/localization";
   import type { ICalendarSource } from "./calendar-ui/types";
@@ -13,50 +9,69 @@
   import type { Moment } from "src/types/moment";
   import { activeFile, dailyNotes, monthlyNotes, quarterlyNotes, secondDailyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
 
-  let today: Moment;
+  let {
+    sources,
+    onHoverDay,
+    onHoverWeek,
+    onClickDay,
+    onClickWeek,
+    onClickMonth,
+    onClickYear,
+    onClickQuarter,
+    onClickToday,
+    onContextMenuDay,
+    onContextMenuWeek,
+  }: {
+    sources: ICalendarSource[];
+    onHoverDay: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onHoverWeek: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onClickDay: (date: Moment, isMetaPressed: boolean, isAltPressed?: boolean) => void;
+    onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
+    onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
+    onClickYear: (date: Moment, isMetaPressed: boolean) => void;
+    onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
+    onClickToday: (date: Moment) => void;
+    onContextMenuDay: (date: Moment, event: MouseEvent) => void;
+    onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
+  } = $props();
 
-  $: today = getToday($settings);
+  let today = $state(moment());
+  // `displayedMonth` is local per-view UI state (which month the calendar
+  // shows). It is two-way bound to CalendarBase (nav arrows / year popup
+  // mutate it) and pushed imperatively from the view via setDisplayedMonth.
+  // Initialized to the current month (moment(), same instant as `today`); it
+  // then diverges as the user navigates, so it intentionally does NOT track
+  // `today` reactively.
+  let displayedMonth = $state(moment());
+
+  // getToday has side effects (configure locale + reindex the note stores),
+  // so it lives in $effect.pre — which runs before the DOM updates, keeping
+  // the legacy `$:` ordering (stores populated before children render).
+  $effect.pre(() => {
+    today = getToday($settings);
+  });
 
   // Recomputed when the displayed year changes (via the year-overview arrows,
-  // which mutate the bound displayedMonth) or when any note store changes.
-  // displayedMonth defaults to `today`, which is assigned reactively and is
-  // therefore undefined at prop-init time — fall back so this never throws
-  // during the first flush (a throw here blanks the whole calendar).
-  $: monthsWithNotes = getMonthsWithNotes(
-    (displayedMonth ?? today ?? moment()).year(),
-    $dailyNotes,
-    $weeklyNotes,
-    $monthlyNotes
+  // which mutate displayedMonth) or when any note store changes.
+  const monthsWithNotes = $derived(
+    getMonthsWithNotes(
+      displayedMonth.year(),
+      $dailyNotes,
+      $weeklyNotes,
+      $monthlyNotes
+    )
   );
 
-  export let displayedMonth: Moment = today;
-  export let sources: ICalendarSource[];
-  export let onHoverDay: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean
-  ) => void;
-  export let onHoverWeek: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean
-  ) => void;
-  export let onClickDay: (
-    date: Moment,
-    isMetaPressed: boolean,
-    isAltPressed?: boolean
-  ) => void;
-  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickYear: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickToday: (date: Moment) => void;
-
-  export let onContextMenuDay: (date: Moment, event: MouseEvent) => void;
-  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
-
+  // Imperative API exposed to the view (CalendarView) via mount()'s exports.
   export function tick() {
     today = moment();
+  }
+
+  // Jump the calendar to a given month — used by the "Reveal active note"
+  // command. displayedMonth is per-view local state, so the view drives it
+  // through this setter rather than a shared store (see FUTURE_PLANS.md).
+  export function setDisplayedMonth(date: Moment) {
+    displayedMonth = date;
   }
 
   function getToday(settings: ISettings) {
@@ -70,20 +85,20 @@
     return moment();
   }
 
-  // 1 minute heartbeat to keep `today` reflecting the current day
-  let heartbeat = setInterval(() => {
-    tick();
+  // 1 minute heartbeat to keep `today` reflecting the current day.
+  $effect(() => {
+    const heartbeat = setInterval(() => {
+      tick();
 
-    const isViewingCurrentMonth = displayedMonth.isSame(today, "month");
-    if (isViewingCurrentMonth) {
-      // if it's midnight on the last day of the month, this will
-      // update the display to show the new month.
-      displayedMonth = today;
-    }
-  }, 1000 * 60);
+      const isViewingCurrentMonth = displayedMonth.isSame(today, "month");
+      if (isViewingCurrentMonth) {
+        // if it's midnight on the last day of the month, this will
+        // update the display to show the new month.
+        displayedMonth = today;
+      }
+    }, 1000 * 60);
 
-  onDestroy(() => {
-    clearInterval(heartbeat);
+    return () => clearInterval(heartbeat);
   });
 </script>
 

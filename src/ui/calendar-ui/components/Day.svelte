@@ -1,5 +1,3 @@
-<svelte:options immutable />
-
 <script lang="ts">
   import type { Moment } from "src/types/moment";
   import { getDateUID } from "src/io/periodicNoteHelpers";
@@ -9,52 +7,59 @@
   import type { IDayMetadata } from "../types";
   import { isAltPressed, isMetaPressed, isWeekend } from "../utils";
 
-  // Properties
-  export let date: Moment;
-  export let metadata: Promise<IDayMetadata> | null;
-  export let onHover: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean
-  ) => void;
-  export let onClick: (
-    date: Moment,
-    isMetaPressed: boolean,
-    isAltPressed?: boolean
-  ) => void;
-  export let onContextMenu: (date: Moment, event: MouseEvent) => void;
+  let {
+    // Properties
+    date,
+    metadata,
+    onHover,
+    onClick,
+    onContextMenu,
+    // Global state
+    today,
+    displayedMonth = null,
+    selectedId = null,
+    weekendDays = [0, 6],
+  }: {
+    date: Moment;
+    metadata: Promise<IDayMetadata> | null;
+    onHover: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onClick: (date: Moment, isMetaPressed: boolean, isAltPressed?: boolean) => void;
+    onContextMenu: (date: Moment, event: MouseEvent) => void;
+    today: Moment;
+    displayedMonth?: Moment | null;
+    selectedId?: string | null;
+    weekendDays?: number[];
+  } = $props();
 
-  // Global state
-  export let today: Moment;
-  export let displayedMonth: Moment | null = null;
-  export let selectedId: string | null = null;
-  export let weekendDays: number[] = [0, 6];
-
-  $: isWeekendDay = isWeekend(date, weekendDays);
+  const isWeekendDay = $derived(isWeekend(date, weekendDays));
 </script>
 
-<td class:weekend="{isWeekendDay}">
-  <MetadataResolver metadata="{metadata}" let:metadata>
-    <div
-      class="{`day ${(metadata.classes ?? []).join(' ')}`}"
-      class:active="{selectedId === getDateUID(date, 'daily')}"
-      class:adjacent-month="{displayedMonth && !date.isSame(displayedMonth, 'month')}"
-      class:today="{date.isSame(today, 'day')}"
-      class:has-background-image="{!!metadata.backgroundImage}"
-      style="{metadata.backgroundImage ? `background-image: url("${metadata.backgroundImage}")` : ''}"
-      on:click="{onClick && ((e) => onClick(date, isMetaPressed(e), isAltPressed(e)))}"
-      on:contextmenu="{onContextMenu && ((e) => onContextMenu(date, e))}"
-      on:pointerover="{onHover &&
-        ((e) => onHover(date, e.currentTarget, isMetaPressed(e)))}"
-      {...metadata.dataAttributes || {}}
-    >
-      <span class="day-number">{date.format("D")}</span>
-      <div class="dot-container">
-        {#each metadata.dots ?? [] as dot}
-          <Dot {...dot} />
-        {/each}
+<td class:weekend={isWeekendDay}>
+  <MetadataResolver {metadata}>
+    {#snippet children(metadata)}
+      <div
+        class={`day ${(metadata.classes ?? []).join(" ")}`}
+        class:active={selectedId === getDateUID(date, "daily")}
+        class:adjacent-month={displayedMonth && !date.isSame(displayedMonth, "month")}
+        class:today={date.isSame(today, "day")}
+        class:has-background-image={!!metadata.backgroundImage}
+        style={metadata.backgroundImage
+          ? `background-image: url("${metadata.backgroundImage}")`
+          : ""}
+        onclick={onClick && ((e) => onClick(date, isMetaPressed(e), isAltPressed(e)))}
+        oncontextmenu={onContextMenu && ((e) => onContextMenu(date, e))}
+        onpointerover={onHover &&
+          ((e) => onHover(date, e.currentTarget, isMetaPressed(e)))}
+        {...metadata.dataAttributes || {}}
+      >
+        <span class="day-number">{date.format("D")}</span>
+        <div class="dot-container">
+          {#each metadata.dots ?? [] as dot}
+            <Dot {...dot} />
+          {/each}
+        </div>
       </div>
-    </div>
+    {/snippet}
   </MetadataResolver>
 </td>
 

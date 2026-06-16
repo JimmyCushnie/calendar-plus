@@ -1,5 +1,3 @@
-<svelte:options immutable />
-
 <script lang="ts">
   import { moment } from "src/types/moment";
   import type { Moment } from "src/types/moment";
@@ -7,37 +5,45 @@
   import Arrow from "./Arrow.svelte";
   import Dot from "./Dot.svelte";
 
-  // Global state
-  export let displayedMonth: Moment;
-  export let today: Moment;
-  export let monthsWithNotes: boolean[] = [];
-
-  // Event handlers
-  export let onSelectMonth: (date: Moment) => void;
-  export let incrementDisplayedYear: () => void;
-  export let decrementDisplayedYear: () => void;
+  let {
+    // Global state
+    displayedMonth,
+    today,
+    monthsWithNotes = [],
+    // Event handlers
+    onSelectMonth,
+    incrementDisplayedYear,
+    decrementDisplayedYear,
+  }: {
+    displayedMonth: Moment;
+    today: Moment;
+    monthsWithNotes?: boolean[];
+    onSelectMonth: (date: Moment) => void;
+    incrementDisplayedYear: () => void;
+    decrementDisplayedYear: () => void;
+  } = $props();
 
   // Localized short month names, Jan..Dec (index = month number).
-  $: monthLabels = moment.monthsShort();
-  $: displayedYear = displayedMonth.year();
-  $: isCurrentYear = displayedYear === today.year();
+  const monthLabels = $derived(moment.monthsShort());
+  const displayedYear = $derived(displayedMonth.year());
+  const isCurrentYear = $derived(displayedYear === today.year());
 </script>
 
 <div class="year-overview">
   <div class="year-nav">
-    <Arrow direction="left" onClick="{decrementDisplayedYear}" />
+    <Arrow direction="left" onClick={decrementDisplayedYear} />
     <span class="year-label">{displayedYear}</span>
-    <Arrow direction="right" onClick="{incrementDisplayedYear}" />
+    <Arrow direction="right" onClick={incrementDisplayedYear} />
   </div>
 
   <div class="months">
     {#each monthLabels as label, i}
       <div
         class="month-cell"
-        class:active="{i === displayedMonth.month()}"
-        class:today="{isCurrentYear && i === today.month()}"
-        on:click="{() =>
-          onSelectMonth(displayedMonth.clone().month(i).startOf('month'))}"
+        class:active={i === displayedMonth.month()}
+        class:today={isCurrentYear && i === today.month()}
+        onclick={() =>
+          onSelectMonth(displayedMonth.clone().month(i).startOf("month"))}
       >
         <span class="month-label">{label}</span>
         <div class="dot-container">

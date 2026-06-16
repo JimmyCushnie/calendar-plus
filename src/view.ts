@@ -5,7 +5,7 @@ import {
 } from "src/io/periodicNoteHelpers";
 import { Menu, ItemView, TFile } from "obsidian";
 import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
-import { createClassComponent } from "svelte/legacy";
+import { mount, unmount } from "svelte";
 import { get } from "svelte/store";
 
 import { TRIGGER_ON_OPEN, VIEW_TYPE_CALENDAR } from "src/constants";
@@ -39,20 +39,18 @@ import {
   wordCountSource,
 } from "./ui/sources";
 
-// The vendored Calendar Svelte component, narrowed to the instance surface
-// this view actually calls. Under Svelte 5 the component is instantiated via
-// `createClassComponent` (svelte/legacy), which returns the legacy class-API
-// instance exposing `$set` / `$destroy` and the component's exported
-// functions (`tick`). Type-aware tooling resolves `.svelte` imports loosely,
-// so we cast the instance to this precise interface.
+// The vendored Calendar Svelte component, narrowed to the exports this view
+// actually calls. Under Svelte 5 the component is instantiated via `mount()`,
+// which returns an object of the component's exported functions (`tick`,
+// `setDisplayedMonth`). Type-aware tooling resolves `.svelte` imports loosely,
+// so we cast the mounted instance to this precise interface.
 interface CalendarComponent {
   tick(): void;
-  $set(props: Record<string, unknown>): void;
-  $destroy(): void;
+  setDisplayedMonth(date: Moment): void;
 }
 
 export default class CalendarView extends ItemView {
-  private calendar!: CalendarComponent;
+  private calendar: CalendarComponent | null = null;
   private settings!: ISettings;
 
   constructor(leaf: WorkspaceLeaf) {
@@ -71,9 +69,10 @@ export default class CalendarView extends ItemView {
       settings.subscribe((val) => {
         this.settings = val;
 
-        // Refresh the calendar if settings change. tick is a Svelte getter that
-        // reads $$.ctx, which is emptied on $destroy — guard against that case.
-        if (this.calendar && typeof this.calendar.tick === "function") {
+        // Refresh the calendar if settings change. Guard against the window
+        // between view construction and mount (and after unmount, when the
+        // ref is nulled).
+        if (this.calendar) {
           this.calendar.tick();
         }
       })
@@ -94,7 +93,8 @@ export default class CalendarView extends ItemView {
 
   onClose(): Promise<void> {
     if (this.calendar) {
-      this.calendar.$destroy();
+      void unmount(this.calendar);
+      this.calendar = null;
     }
     return Promise.resolve();
   }
@@ -114,14 +114,7 @@ export default class CalendarView extends ItemView {
     ];
     this.app.workspace.trigger(TRIGGER_ON_OPEN, sources);
 
-    // createClassComponent is Svelte 5's documented bridge for keeping the
-    // existing legacy (non-runes) component API; Calendar Plus intentionally
-    // stayed on legacy components in the 2.1.0 modernization (no runes
-    // rewrite). A native mount()/unmount() migration is planned with the runes
-    // pass — see FUTURE_PLANS.md. Until then this deprecation is expected.
-    // eslint-disable-next-line @typescript-eslint/no-deprecated
-    this.calendar = createClassComponent({
-      component: Calendar,
+    this.calendar = mount(Calendar, {
       target: this.contentEl,
       props: {
         onClickDay: this.openOrCreateDailyNote,
@@ -513,7 +506,7 @@ export default class CalendarView extends ItemView {
       ? helperGetDateFromFile(file, "daily", this.settings.daily.format)
       : null;
     if (date) {
-      this.calendar.$set({ displayedMonth: date });
+      this.calendar?.setDisplayedMonth(date);
       return;
     }
 
@@ -521,7 +514,7 @@ export default class CalendarView extends ItemView {
       ? helperGetDateFromFile(file, "weekly", this.settings.weekly.format)
       : null;
     if (date) {
-      this.calendar.$set({ displayedMonth: date });
+      this.calendar?.setDisplayedMonth(date);
       return;
     }
 
@@ -529,7 +522,7 @@ export default class CalendarView extends ItemView {
       ? helperGetDateFromFile(file, "monthly", this.settings.monthly.format)
       : null;
     if (date) {
-      this.calendar.$set({ displayedMonth: date });
+      this.calendar?.setDisplayedMonth(date);
       return;
     }
 
@@ -537,7 +530,7 @@ export default class CalendarView extends ItemView {
       ? helperGetDateFromFile(file, "quarterly", this.settings.quarterly.format)
       : null;
     if (date) {
-      this.calendar.$set({ displayedMonth: date });
+      this.calendar?.setDisplayedMonth(date);
       return;
     }
 
@@ -545,7 +538,7 @@ export default class CalendarView extends ItemView {
       ? helperGetDateFromFile(file, "yearly", this.settings.yearly.format)
       : null;
     if (date) {
-      this.calendar.$set({ displayedMonth: date });
+      this.calendar?.setDisplayedMonth(date);
       return;
     }
   }

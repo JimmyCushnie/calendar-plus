@@ -1,5 +1,3 @@
-<svelte:options immutable />
-
 <script lang="ts">
   import { Platform } from "obsidian";
 
@@ -11,66 +9,75 @@
   import WeekNum from "./WeekNum.svelte";
   import YearGrid from "./YearGrid.svelte";
   import { getDailyMetadata, getWeeklyMetadata } from "../metadata";
-  import type { ICalendarSource, IMonth } from "../types";
+  import type { ICalendarSource } from "../types";
   import { getDaysOfWeek, getMonth, isWeekend } from "../utils";
 
-  // Localization
-  export let localeData: Locale;
+  let {
+    // Localization
+    localeData,
+    // Settings
+    showWeekNums = false,
+    showWeekNumsRight = false,
+    // JS weekday numbers (0 = Sunday … 6 = Saturday) treated as weekend days
+    // for the `class:weekend` binding on header and body cells. Independent of
+    // week-start ordering.
+    weekendDays = [0, 6],
+    // Event handlers
+    onHoverDay,
+    onHoverWeek,
+    onContextMenuDay,
+    onContextMenuWeek,
+    quarterVisible,
+    onClickDay,
+    onClickWeek,
+    onClickMonth,
+    onClickYear,
+    onClickQuarter,
+    onClickToday = undefined,
+    showTodayButtonOnMobile = false,
+    // Year overview: when true, render the history button in the header that
+    // opens the 12-month grid as a popup. `monthsWithNotes` drives the
+    // per-month "has any note" dot.
+    showYearOverview = false,
+    monthsWithNotes = [],
+    // External sources (all optional)
+    sources = [],
+    selectedId,
+    // Override-able local state. `displayedMonth` is two-way bound by the
+    // wrapper (and pushed imperatively via the wrapper's setDisplayedMonth),
+    // so it is $bindable; its default references `today`, hence the ordering.
+    today = moment(),
+    displayedMonth = $bindable(today),
+  }: {
+    localeData: Locale;
+    showWeekNums?: boolean;
+    showWeekNumsRight?: boolean;
+    weekendDays?: number[];
+    onHoverDay: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onHoverWeek: (date: Moment, targetEl: EventTarget, isMetaPressed: boolean) => void;
+    onContextMenuDay: (date: Moment, event: MouseEvent) => void;
+    onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
+    quarterVisible: boolean;
+    onClickDay: (date: Moment, isMetaPressed: boolean, isAltPressed?: boolean) => void;
+    onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
+    onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
+    onClickYear: (date: Moment, isMetaPressed: boolean) => void;
+    onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
+    onClickToday?: (date: Moment) => void;
+    showTodayButtonOnMobile?: boolean;
+    showYearOverview?: boolean;
+    monthsWithNotes?: boolean[];
+    sources?: ICalendarSource[];
+    selectedId: string | null;
+    today?: Moment;
+    displayedMonth?: Moment;
+  } = $props();
 
-  // Settings
-  export let showWeekNums: boolean = false;
-  export let showWeekNumsRight: boolean = false;
-  // JS weekday numbers (0 = Sunday … 6 = Saturday) treated as weekend days
-  // for the `class:weekend` binding on header and body cells. Independent of
-  // week-start ordering.
-  export let weekendDays: number[] = [0, 6];
-
-  // Event Handlers
-  export let onHoverDay: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean,
-  ) => void;
-  export let onHoverWeek: (
-    date: Moment,
-    targetEl: EventTarget,
-    isMetaPressed: boolean,
-  ) => void;
-  export let onContextMenuDay: (date: Moment, event: MouseEvent) => void;
-  export let onContextMenuWeek: (date: Moment, event: MouseEvent) => void;
-  export let quarterVisible: boolean;
-  export let onClickDay: (
-    date: Moment,
-    isMetaPressed: boolean,
-    isAltPressed?: boolean
-  ) => void;
-  export let onClickWeek: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickMonth: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickYear: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickQuarter: (date: Moment, isMetaPressed: boolean) => void;
-  export let onClickToday: ((date: Moment) => void) | undefined = undefined;
-  export let showTodayButtonOnMobile: boolean = false;
-  // Year overview: when true, render the history button in the header that
-  // opens the 12-month grid as a popup. `monthsWithNotes` drives the
-  // per-month "has any note" dot.
-  export let showYearOverview: boolean = false;
-  export let monthsWithNotes: boolean[] = [];
-  // External sources (All optional)
-  export let sources: ICalendarSource[] = [];
-  export let selectedId: string | null;
-
-  // Override-able local state
-  export let today: Moment = moment();
-  export let displayedMonth = today;
-
-  let month: IMonth;
-  let daysOfWeek: string[];
-
-  let isMobile = Platform.isMobile;
+  const isMobile = Platform.isMobile;
 
   // Year-overview popup open/close is local, transient UI state (not
   // persisted). The history button toggles it; a window click closes it.
-  let yearOverviewOpen = false;
+  let yearOverviewOpen = $state(false);
 
   function toggleYearOverview() {
     yearOverviewOpen = !yearOverviewOpen;
@@ -90,8 +97,11 @@
     yearOverviewOpen = false;
   }
 
-  $: month = getMonth(displayedMonth, localeData);
-  $: daysOfWeek = getDaysOfWeek(today, localeData);
+  // getMonth/getDaysOfWeek read moment's global locale; `localeData` (and
+  // `today`) are passed as reactivity triggers so these re-derive when the
+  // locale / week-start change. See utils.ts.
+  const month = $derived(getMonth(displayedMonth, localeData));
+  const daysOfWeek = $derived(getDaysOfWeek(today, localeData));
 
   // Exports
   export function incrementDisplayedMonth() {
@@ -108,12 +118,12 @@
 </script>
 
 <svelte:window
-  on:click="{() => {
+  onclick={() => {
     if (yearOverviewOpen) yearOverviewOpen = false;
-  }}"
+  }}
 />
 
-<div id="calendar-container" class="container" class:is-mobile="{isMobile}">
+<div id="calendar-container" class="container" class:is-mobile={isMobile}>
   <Nav
     {today}
     {displayedMonth}
@@ -125,18 +135,18 @@
     {onClickQuarter}
     {onClickToday}
     {showTodayButtonOnMobile}
-    showYearOverviewButton="{showYearOverview}"
+    showYearOverviewButton={showYearOverview}
     {yearOverviewOpen}
-    onToggleYearOverview="{toggleYearOverview}"
+    onToggleYearOverview={toggleYearOverview}
     {resetDisplayedMonth}
   />
   {#if yearOverviewOpen}
-    <div class="year-popup" on:click|stopPropagation>
+    <div class="year-popup" onclick={(e) => e.stopPropagation()}>
       <YearGrid
         {today}
         {displayedMonth}
         {monthsWithNotes}
-        onSelectMonth="{selectMonth}"
+        onSelectMonth={selectMonth}
         {incrementDisplayedYear}
         {decrementDisplayedYear}
       />
@@ -170,36 +180,36 @@
           {#if showWeekNums && !showWeekNumsRight}
             <WeekNum
               {...week}
-              metadata="{getWeeklyMetadata(sources, week.days[0], today)}"
-              onClick="{onClickWeek}"
-              onContextMenu="{onContextMenuWeek}"
-              onHover="{onHoverWeek}"
+              metadata={getWeeklyMetadata(sources, week.days[0], today)}
+              onClick={onClickWeek}
+              onContextMenu={onContextMenuWeek}
+              onHover={onHoverWeek}
               {selectedId}
-              gridRight="{!showWeekNumsRight}"
+              gridRight={!showWeekNumsRight}
             />
           {/if}
           {#each week.days as day (day.format())}
             <Day
-              date="{day}"
+              date={day}
               {today}
               {displayedMonth}
               {weekendDays}
-              onClick="{onClickDay}"
-              onContextMenu="{onContextMenuDay}"
-              onHover="{onHoverDay}"
-              metadata="{getDailyMetadata(sources, day, today)}"
+              onClick={onClickDay}
+              onContextMenu={onContextMenuDay}
+              onHover={onHoverDay}
+              metadata={getDailyMetadata(sources, day, today)}
               {selectedId}
             />
           {/each}
           {#if showWeekNums && showWeekNumsRight}
             <WeekNum
               {...week}
-              metadata="{getWeeklyMetadata(sources, week.days[0], today)}"
-              onClick="{onClickWeek}"
-              onContextMenu="{onContextMenuWeek}"
-              onHover="{onHoverWeek}"
+              metadata={getWeeklyMetadata(sources, week.days[0], today)}
+              onClick={onClickWeek}
+              onContextMenu={onContextMenuWeek}
+              onHover={onHoverWeek}
               {selectedId}
-              gridRight="{!showWeekNumsRight}"
+              gridRight={!showWeekNumsRight}
             />
           {/if}
         </tr>
