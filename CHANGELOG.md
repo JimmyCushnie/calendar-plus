@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.4
+
+Performance fix for settings editing on large vaults. No change to features or settings; `minAppVersion` unchanged at 1.8.7.
+
+- Editing a periodic note's **folder** or **date format** no longer rescans that folder on every keystroke — the rescan is debounced and runs once you pause typing. On large vaults this removes the typing lag in those fields (including the date-format field, which has no autocomplete). Dots refresh a moment after you stop editing; everything else (dot style, week start, etc.) still updates instantly.
+
 ## 2.1.3
 
 Autocomplete modernization and performance polish. No change to features or settings; `minAppVersion` unchanged at 1.8.7.

@@ -30,17 +30,17 @@ Svelte 5.56.3 cleared the *current* svelte advisory set (`npm audit` → 0 vulne
 
 ## Performance pass (partially done — remaining items deferred)
 
-Load-testing on a large vault surfaced some rendering/indexing cost. Several targeted fixes have landed across 2.1.2 / 2.1.3:
+Load-testing on a large vault surfaced some rendering/indexing cost. Several targeted fixes have landed across 2.1.2 – 2.1.4:
 
 - **2.1.2:** feature-image cell hover no longer repaints/re-composites the photo (stable `background-color`, hover cue via the `::before` overlay); the wrapper reindexes note stores **selectively** (only the store whose `folder`/`format`/`enabled` changed).
 - **2.1.3:** `getFeatureImageUrl` is **memoized** per `(path, mtime, props)` (`src/io/featureImage.ts`) so unchanged cells don't re-resolve on every tick; the **heartbeat only reassigns `today` on an actual day rollover** (was reassigning every 60s → full recompute once a minute); and the **redundant settings-change recompute was deduped** (removed the `view.ts` settings-subscribe `tick()` — the Calendar wrapper's own `$effect.pre` already refreshes on `$settings` change, so it was bumping `today` twice per change).
+- **2.1.4:** the selective store reindex is now **debounced ~300ms** on settings changes (mount stays immediate), so per-keystroke folder/format edits coalesce to one folder walk — this removed the remaining settings-typing lag, including in the date-format field (which has no autocomplete, confirming the cost was the rescan).
 
 Remaining threads (deferred; **profile on a large vault with the devtools Performance tab first** — the below is hypothesis from reading the code, not measurement):
 
 - **Feature-image rendering on image-heavy vaults.** Many simultaneous `background-image` cells are GPU-compositing heavy regardless of the resolve cost (now memoized). Options: downscaled thumbnails instead of full-res `app://` images (Notebook Navigator caches these in IndexedDB — see `reference/notebook-navigator-3.1.2/`), `content-visibility`/`contain` on cells, or capping image resolution.
 - **`word-count-tasks` dot mode** does a `vault.cachedRead` per visible cell on every `tick()` (`src/ui/sources/{wordCount,tasks}.ts`). Same memoize-per-`(path, mtime)` treatment as feature images would help users on that (non-default) mode.
-- **The `today`-bump-as-universal-refresh design.** Every refresh (settings change, file create/delete/modify/rename, metadata change, active-file sync) works by reassigning `today`, which re-evaluates `getDailyMetadata(...)` for *all* visible cells (the metadata expressions read the note stores via `get()`, not reactively, so a blanket trigger is needed). A more granular model — making cells reactively depend on their own store entry so only changed cells recompute — would cut recompute scope, but it's a meaningful rearchitecture (touches the source/metadata layer) and is why a per-keystroke settings edit still recomputes all cells once (cheap now that image resolution is memoized, but not free). Don't attempt without profiling justifying it.
-- **Settings reindex debounce.** Selective reindex still rescans the *one* changed store per keystroke while typing a folder/format. A ~200ms debounce (or reindex on blur) would remove that; low value now that it's down to one store.
+- **The `today`-bump-as-universal-refresh design.** Every refresh (settings change, file create/delete/modify/rename, metadata change, active-file sync) works by reassigning `today`, which re-evaluates `getDailyMetadata(...)` for *all* visible cells (the metadata expressions read the note stores via `get()`, not reactively, so a blanket trigger is needed). A more granular model — making cells reactively depend on their own store entry so only changed cells recompute — would cut recompute scope, but it's a meaningful rearchitecture (touches the source/metadata layer). Don't attempt without profiling justifying it.
 
 No firm version target for the remainder; pick it up if large-vault performance becomes worth a focused, profile-driven session.
 
