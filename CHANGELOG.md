@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.3
+
+Autocomplete modernization and performance polish. No change to features or settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Settings path autocomplete** (folder/template fields) now uses Obsidian's native suggestion popup, so it looks and behaves like Obsidian's other path inputs (and is built on a maintained API instead of ~150 lines of custom positioning/keyboard code).
+- **Snappier on large vaults:** feature-image lookups are cached per note (re-resolved only when the note changes), the once-a-minute "today" refresh now does work only when the day actually changes, and a redundant double-refresh on every settings change was removed.
+
 ## 2.1.2
 
 Completes the 2.1.0 modernization, plus two fixes for long-standing (pre-existing) issues. `minAppVersion` unchanged at 1.8.7.
