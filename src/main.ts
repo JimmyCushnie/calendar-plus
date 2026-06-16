@@ -28,7 +28,7 @@ export default class CalendarPlugin extends Plugin {
 
     this.registerView(
       VIEW_TYPE_CALENDAR,
-      (leaf: WorkspaceLeaf) => new CalendarView(leaf)
+      (leaf: WorkspaceLeaf) => new CalendarView(leaf, this)
     );
 
     this.addRibbonIcon("calendar-plus", "Open Calendar Plus", () => {

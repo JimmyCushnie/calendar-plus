@@ -25,6 +25,8 @@ export function createFeatureImageSource(app: App): ICalendarSource {
       if (!s.featureImage.enabled || !s.daily.enabled) return {};
       const file = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
       if (!file) return {};
+      // Per-note opt-out (toggled from the day-cell menu, stored in settings).
+      if (s.featureImage.hiddenNotes.includes(file.path)) return {};
       const url = getFeatureImageUrl(file, app, s.featureImage.frontmatterProperties);
       return url ? { backgroundImage: url } : {};
     },
@@ -36,6 +38,7 @@ export function createFeatureImageSource(app: App): ICalendarSource {
       }
       const file = helperGetPeriodicNote(date, "weekly", get(weeklyNotes) ?? {});
       if (!file) return {};
+      if (s.featureImage.hiddenNotes.includes(file.path)) return {};
       const url = getFeatureImageUrl(file, app, s.featureImage.frontmatterProperties);
       return url ? { backgroundImage: url } : {};
     },

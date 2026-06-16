@@ -39,6 +39,13 @@ export interface FeatureImageSettings {
   frontmatterProperties: string[];
   /** When true, weekly-note cells also show feature images. */
   showForWeekly: boolean;
+  /**
+   * Vault paths of notes whose feature image is hidden on the calendar
+   * (per-note opt-out, toggled from the day-cell context menu). Stored here
+   * rather than in note frontmatter so it doesn't add a Properties box to the
+   * note.
+   */
+  hiddenNotes: string[];
 }
 
 export interface ISettings {
@@ -160,6 +167,7 @@ export const defaultSettings = Object.freeze({
     enabled: false,
     frontmatterProperties: ["banner", "image", "cover"],
     showForWeekly: true,
+    hiddenNotes: [],
   },
 });
 

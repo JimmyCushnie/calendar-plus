@@ -56,6 +56,10 @@ The unreleased upstream **Calendar 2.0.0-beta.2** (`reference/obsidian-calendar-
 
 The Second Daily Note feature (2.0.0) gives a second, independent daily note per day. A parallel "second weekly note" could extend the same pattern to weekly notes. **Undecided — not committed.** For now a second daily note is enough; revisit only if a concrete need for a second weekly note comes up. If pursued, it would mirror the second-daily design: a `secondWeekly: PeriodicNoteSettings` key, a dedicated store factory keyed on `"weekly"`, a self-gated dot source, and access via the week-number cell's right-click menu (and possibly Option/Alt + click), reusing the same open/create + trash patterns.
 
+## Optional: feature-image "hidden notes" path staleness (deferred, low priority)
+
+The per-note "Hide feature image" toggle (2.1.6) stores vault **paths** in `settings.featureImage.hiddenNotes`. If a hidden note is renamed or moved, its stored path goes stale: the image reappears on the cell and the orphaned path lingers in the list. Daily notes are date-named and rarely renamed, so this is deferred. If it ever matters, options: (a) update `hiddenNotes` entries in `CalendarView.onFileRenamed` (it already handles the vault `rename` event for the note stores — swap `oldPath` → new path there via `writeOptions`); and/or (b) lazily prune entries whose file no longer exists. Either is a few lines; not worth the churn until there's a reason.
+
 ## Optional: richer context menu for existing Second Daily Notes (partially done, deferred)
 
 The day context menu for an existing second daily note currently has **Open second daily note** and **Delete second daily note** (added in 2.0.0). The primary daily note gets the full Obsidian file menu (rename, open in new tab, reveal in navigation, plus any items other plugins inject via `file-menu`). The second daily note still lacks:

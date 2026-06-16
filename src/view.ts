@@ -16,12 +16,9 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
-import {
-  getFeatureImageUrl,
-  isFeatureImageHidden,
-  HIDE_FEATURE_IMAGE_KEY,
-} from "src/io/featureImage";
+import { getFeatureImageUrl } from "src/io/featureImage";
 import type { ISettings } from "src/settings";
+import type CalendarPlugin from "src/main";
 
 import Calendar from "./ui/Calendar.svelte";
 import { showFileMenu } from "./ui/fileMenu";
@@ -58,7 +55,12 @@ export default class CalendarView extends ItemView {
   private calendar: CalendarComponent | null = null;
   private settings!: ISettings;
 
-  constructor(leaf: WorkspaceLeaf) {
+  // The plugin ref is used to persist settings the view itself can change
+  // (currently the per-note feature-image hidden list) via writeOptions.
+  constructor(
+    leaf: WorkspaceLeaf,
+    private plugin: CalendarPlugin
+  ) {
     super(leaf);
 
     this.registerEvent(this.app.vault.on("create", this.onFileCreated));
@@ -319,14 +321,15 @@ export default class CalendarView extends ItemView {
   };
 
   // Adds a "Hide/Show feature image" toggle to a day-cell context menu when
-  // feature images are enabled and the note has (or has hidden) one. Writes a
-  // per-note frontmatter flag via processFrontMatter; the resulting
-  // metadataCache "changed" event ticks the calendar so the cell updates.
+  // feature images are enabled and the note has (or has hidden) one. The
+  // hidden state lives in plugin data (settings.featureImage.hiddenNotes), so
+  // toggling it persists via writeOptions and the cell refreshes through the
+  // settings store — no note edit, no metadata-cache dependency.
   private addFeatureImageMenuItem(menu: Menu, note: TFile): void {
     const { featureImage } = this.settings;
     if (!featureImage.enabled) return;
 
-    if (isFeatureImageHidden(note, this.app)) {
+    if (featureImage.hiddenNotes.includes(note.path)) {
       menu.addItem((item) =>
         item
           .setTitle("Show feature image")
@@ -347,20 +350,23 @@ export default class CalendarView extends ItemView {
     }
   }
 
+  // Toggle the per-note opt-out in plugin data (not frontmatter, so it adds
+  // no Properties box to the note). Persisting via writeOptions updates the
+  // settings store, which the calendar wrapper reacts to — so the cell
+  // refreshes without touching the file or relying on metadata-cache events.
   private async setFeatureImageHidden(
     note: TFile,
     hidden: boolean
   ): Promise<void> {
-    await this.app.fileManager.processFrontMatter(
-      note,
-      (frontmatter: Record<string, unknown>) => {
-        if (hidden) {
-          frontmatter[HIDE_FEATURE_IMAGE_KEY] = true;
-        } else {
-          delete frontmatter[HIDE_FEATURE_IMAGE_KEY];
-        }
-      }
-    );
+    await this.plugin.writeOptions((prev) => {
+      const current = prev.featureImage.hiddenNotes;
+      const hiddenNotes = hidden
+        ? current.includes(note.path)
+          ? current
+          : [...current, note.path]
+        : current.filter((path) => path !== note.path);
+      return { featureImage: { ...prev.featureImage, hiddenNotes } };
+    });
   }
 
   private openOrCreateSecondDailyNote = async (
