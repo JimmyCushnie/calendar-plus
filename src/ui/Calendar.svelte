@@ -1,4 +1,7 @@
 <script lang="ts">
+  import { debounce } from "obsidian";
+  import { get } from "svelte/store";
+
   import CalendarBase from "./calendar-ui/components/Calendar.svelte";
   import { configureGlobalMomentLocale } from "./calendar-ui/localization";
   import type { ICalendarSource } from "./calendar-ui/types";
@@ -46,19 +49,44 @@
 
   // Settings → locale + store reindex. Side effects, so this lives in
   // $effect.pre (runs before the DOM updates, keeping the legacy `$:`
-  // ordering: stores populated before children render). Reindexing is
-  // *selective* — a store is only rescanned when its own folder/format/enabled
-  // changed (or on first run). Without this, typing a single character in any
-  // folder/format settings field rescanned all six note folders on every
-  // keystroke, which lagged noticeably on large vaults.
-  let prevSettings: ISettings | null = null;
+  // ordering: stores populated before children render).
+  //
+  // Reindexing a note store walks its folder and parses every filename, so it
+  // is both *selective* (only stores whose folder/format/enabled changed) and
+  // *debounced* on subsequent changes — a folder/format field saves on every
+  // keystroke, and rescanning a populated folder per keystroke lagged on large
+  // vaults. The locale config and the (cheap) `today` bump stay immediate so
+  // dot-style / week-start / other display settings still respond instantly;
+  // only the expensive folder rescan waits for a typing pause. The very first
+  // run (mount) reindexes immediately so the calendar is populated on open.
+  let reindexedSettings: ISettings | null = null;
+  let mounted = false;
+
+  const debouncedReindex = debounce(() => {
+    const s = get(settings);
+    if (reindexChangedStores(s, reindexedSettings)) {
+      // Reflect the freshly-scanned stores in the cells (their metadata reads
+      // the stores non-reactively, so a `today` bump is what re-derives them).
+      today = moment();
+    }
+    reindexedSettings = s;
+  }, 300, true);
+
   $effect.pre(() => {
     const s = $settings;
     configureGlobalMomentLocale(s.localeOverride, s.weekStart);
-    reindexChangedStores(s, prevSettings);
-    prevSettings = s;
     today = moment();
+    if (!mounted) {
+      mounted = true;
+      reindexChangedStores(s, null);
+      reindexedSettings = s;
+    } else {
+      debouncedReindex();
+    }
   });
+
+  // Cancel a pending rescan if the view is torn down before it fires.
+  $effect(() => () => debouncedReindex.cancel());
 
   // Recomputed when the displayed year changes (via the year-overview arrows,
   // which mutate displayedMonth) or when any note store changes.
@@ -96,13 +124,34 @@
     );
   }
 
-  function reindexChangedStores(s: ISettings, prev: ISettings | null) {
-    if (periodChanged(s.daily, prev?.daily)) dailyNotes.reindex();
-    if (periodChanged(s.weekly, prev?.weekly)) weeklyNotes.reindex();
-    if (periodChanged(s.monthly, prev?.monthly)) monthlyNotes.reindex();
-    if (periodChanged(s.yearly, prev?.yearly)) yearlyNotes.reindex();
-    if (periodChanged(s.quarterly, prev?.quarterly)) quarterlyNotes.reindex();
-    if (periodChanged(s.secondDaily, prev?.secondDaily)) secondDailyNotes.reindex();
+  // Returns true if any store was actually rescanned.
+  function reindexChangedStores(s: ISettings, prev: ISettings | null): boolean {
+    let any = false;
+    if (periodChanged(s.daily, prev?.daily)) {
+      dailyNotes.reindex();
+      any = true;
+    }
+    if (periodChanged(s.weekly, prev?.weekly)) {
+      weeklyNotes.reindex();
+      any = true;
+    }
+    if (periodChanged(s.monthly, prev?.monthly)) {
+      monthlyNotes.reindex();
+      any = true;
+    }
+    if (periodChanged(s.yearly, prev?.yearly)) {
+      yearlyNotes.reindex();
+      any = true;
+    }
+    if (periodChanged(s.quarterly, prev?.quarterly)) {
+      quarterlyNotes.reindex();
+      any = true;
+    }
+    if (periodChanged(s.secondDaily, prev?.secondDaily)) {
+      secondDailyNotes.reindex();
+      any = true;
+    }
+    return any;
   }
 
   // 1 minute heartbeat to keep `today` reflecting the current day. Only act
