@@ -2,16 +2,18 @@
 
 Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `main`. None are required for the current stable baseline.
 
-## NEXT UP: Svelte 5 runes + native component-API migration
+## DONE (2.1.2): Svelte 5 runes + native component-API migration
 
-**This is the top-priority next piece of work** — the 2.1.0 modernization deliberately stayed on Svelte's *legacy* (non-runes) component model so the toolchain bump could land first without a behavior risk; now that it's shipped and stable, the intent is to do the runes/native migration soon. Scope:
+**Completed in 2.1.2.** The 2.1.0 toolchain bump deliberately kept the components on Svelte's *legacy* (non-runes) model via `createClassComponent`; this pass finished the job once that had shipped and stabilized. What landed:
 
-- **Migrate components to runes** (`$state` / `$derived` / `$effect` / `$props`) from the legacy `export let` / `$:` / store-subscription style, across the vendored `src/ui/calendar-ui/components/*.svelte` and `src/ui/Calendar.svelte`.
-- **Replace `createClassComponent` (`svelte/legacy`) with the native `mount()` / `unmount()` API in `src/view.ts`.** This is the proper fix for the `@typescript-eslint/no-deprecated` finding currently suppressed at `view.ts:117` (and enabled in `eslint.config.mjs`) — once migrated, remove that inline `eslint-disable` directive and its comment. `mount()` returns the component's exported functions (the current `CalendarComponent` interface's `tick`); `$set` becomes reactive `$state` props passed at mount and mutated in place; `$destroy` becomes `unmount()`.
-- **Re-verify `<svelte:options immutable>` semantics** under runes (changed in Svelte 5) and the reactive-dependency patterns that the legacy `$:` blocks + the `..._args` rest-param trigger trick in `utils.ts` currently rely on.
-- **Must runtime-test in Obsidian again** — runes compile differently; a green build is necessary but not sufficient.
+- **All calendar components migrated to runes** (`$props` / `$state` / `$derived` / `$effect`) across `src/ui/calendar-ui/components/*.svelte` and `src/ui/Calendar.svelte`. `<slot let:metadata>` (MetadataResolver → Day/WeekNum) became snippets (`{#snippet children(metadata)}` / `{@render}`). `on:` directives became event attributes (`onclick`, …); the `|stopPropagation` modifier was inlined. `<svelte:options immutable>` removed (runes do fine-grained reactivity).
+- **`view.ts` moved to native `mount()` / `unmount()`**, retiring the `createClassComponent` (`svelte/legacy`) bridge and the suppressed `@typescript-eslint/no-deprecated` directive. The `CalendarComponent` interface is now `tick` + `setDisplayedMonth`.
+- **`displayedMonth` imperative updates** (the old `$set` in `revealActiveNote`) became an exported `setDisplayedMonth()` on the wrapper — see the note below on when this might change.
+- The `..._args` rest-param trigger trick in `utils.ts` / `metadata.ts` was **kept** — under runes, `$derived(getMonth(displayedMonth, localeData))` still tracks `localeData`/`today` because they're read (passed) at the call site, and `getMonth` reads moment's *global* locale that `localeData` only signals. Verified no behavior change via load-test.
 
-Do this on a dedicated branch + session, component-by-component, load-testing before release. Likely a minor bump (no user-facing change intended).
+### Note: if multiple calendar views ever land, reconsider `displayedMonth` as shared state
+
+`displayedMonth` is currently **per-view local `$state`** in `src/ui/Calendar.svelte`, driven imperatively from `view.ts` via the exported `setDisplayedMonth()` (decision A1 in the runes-migration planning — chosen because there is exactly one calendar view and nothing else reads "which month is displayed"). If a future feature introduces **multiple calendar views** (e.g. a secondary calendar alongside second-daily-notes work) or any cross-view/command need to read or drive the displayed month from outside the component, revisit this: promote `displayedMonth` to shared reactive state — the modern Svelte 5 idiom is `$state` exported from a `.svelte.ts` module (preferred over a `writable` store) — and have `view.ts` read/write that instead of calling a per-instance setter. There is **no concrete plan** for multiple views today; this is captured only so the trade-off is visible if that changes.
 
 ## DONE (2.1.0): Svelte 5 + full toolchain modernization
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.2
+
+Completes the 2.1.0 modernization — **no user-facing behavior change** (verified with an Obsidian load-test across all features).
+
+The 2.1.0 release moved the toolchain to Svelte 5 but kept the calendar components on Svelte's legacy (non-runes) syntax via a compatibility bridge. This release finishes the job by migrating to idiomatic Svelte 5.
+
+- Rewrote all calendar components to **Svelte 5 runes** (`$props` / `$state` / `$derived` / `$effect`); slot-based content now uses snippets.
+- The view now mounts the calendar with Svelte 5's native `mount()` / `unmount()`, retiring the legacy `createClassComponent` bridge (and the deprecation warning that came with it).
+- `minAppVersion` unchanged at 1.8.7.
+
 ## 2.1.1
 
 Maintenance release — clears the Obsidian plugin-review warnings introduced by the 2.1.0 toolchain migration. No functional or behavior change.
