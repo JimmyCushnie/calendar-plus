@@ -28,6 +28,17 @@ Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `mai
 
 Svelte 5.56.3 cleared the *current* svelte advisory set (`npm audit` → 0 vulnerabilities at release), but this does **not** change the standing disposition: svelte ships new SSR-XSS advisories regularly, and **every one to date is SSR-only and not reachable here** (no SSR, no `{@html}` anywhere). No svelte version stays advisory-clean for long. **Disposition: accepted.** Do not chase future svelte advisories via migration *for the checker's sake* — bump svelte only when there's a tooling/maintenance reason.
 
+## Performance pass (deferred)
+
+Load-testing 2.1.2 on a large vault surfaced some rendering/indexing cost. Two targeted fixes already landed in 2.1.2 — hover on feature-image cells no longer repaints/re-composites the photo (kept `background-color` stable, hover cue via the `::before` overlay), and the wrapper now reindexes note stores **selectively** (only the store whose `folder`/`format`/`enabled` changed, instead of all six on every settings keystroke). Those took the edge off, but a dedicated pass is wanted later. Threads to pursue, roughly in expected-impact order:
+
+- **Feature-image rendering on image-heavy vaults.** Even after the hover fix, many simultaneous `background-image` cells are GPU-compositing heavy. Options: generate/caches downscaled thumbnails instead of full-res `app://` images (Notebook Navigator does this via IndexedDB — see `reference/notebook-navigator-3.1.2/`), `content-visibility`/`contain` on cells, or capping image resolution. `getFeatureImageUrl` also runs per visible cell on every `tick()` (`getFileCache` + `getResourcePath`) — memoize per (file, mtime) so unchanged cells don't re-resolve.
+- **Metadata recompute on every `tick()`.** `getDailyMetadata`/`getWeeklyMetadata` rebuild for all visible cells whenever `today` changes (settings change, heartbeat). In `word-count-tasks` dot mode this includes `vault.cachedRead` per cell. Consider memoizing per (file, mtime) / only recomputing cells whose note changed.
+- **Settings reindex further.** Selective reindex (2.1.2) still rescans the *one* changed store on every keystroke while typing a folder/format. A short debounce (~200ms) on the reindex — or reindexing on input blur/commit rather than per keystroke — would remove the remaining per-keystroke scan. Low risk; deferred only because 2.1.2's selective fix made it "good enough to ship."
+- **Profile first.** Before changing anything, profile on a large vault (Obsidian devtools Performance tab) to confirm which of the above actually dominates — the above is hypothesis from reading the code + one load-test, not measurement.
+
+No firm priority or version target; pick this up when image/large-vault performance becomes worth a focused session.
+
 ## Idea: consider a second weekly note (undecided)
 
 The Second Daily Note feature (2.0.0) gives a second, independent daily note per day. A parallel "second weekly note" could extend the same pattern to weekly notes. **Undecided — not committed.** For now a second daily note is enough; revisit only if a concrete need for a second weekly note comes up. If pursued, it would mirror the second-daily design: a `secondWeekly: PeriodicNoteSettings` key, a dedicated store factory keyed on `"weekly"`, a self-gated dot source, and access via the week-number cell's right-click menu (and possibly Option/Alt + click), reusing the same open/create + trash patterns.
