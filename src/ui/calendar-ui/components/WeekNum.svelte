@@ -109,7 +109,20 @@
     border-radius: 4px;
     background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.35));
     pointer-events: none;
+    transition: background 0.1s ease-in;
     z-index: 0;
+  }
+
+  /* Hover over an image cell: lighten the ::before overlay (photo appears to
+     brighten) and keep background-color stable to avoid re-compositing the
+     image on hover. Mirrors Day.svelte. */
+  .week-num.has-background-image:hover,
+  .week-num.has-background-image.active:hover {
+    background-color: transparent;
+  }
+
+  .week-num.has-background-image:hover::before {
+    background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
   }
 
   .week-num.has-background-image.active {

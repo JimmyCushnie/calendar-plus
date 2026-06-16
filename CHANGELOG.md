@@ -2,13 +2,17 @@
 
 ## 2.1.2
 
-Completes the 2.1.0 modernization — **no user-facing behavior change** (verified with an Obsidian load-test across all features).
+Completes the 2.1.0 modernization, plus two fixes for long-standing (pre-existing) issues. `minAppVersion` unchanged at 1.8.7.
 
-The 2.1.0 release moved the toolchain to Svelte 5 but kept the calendar components on Svelte's legacy (non-runes) syntax via a compatibility bridge. This release finishes the job by migrating to idiomatic Svelte 5.
+**Svelte 5 runes migration** (no behavior change — verified with an Obsidian load-test). The 2.1.0 release moved the toolchain to Svelte 5 but kept the calendar components on Svelte's legacy (non-runes) syntax via a compatibility bridge; this finishes the job:
 
 - Rewrote all calendar components to **Svelte 5 runes** (`$props` / `$state` / `$derived` / `$effect`); slot-based content now uses snippets.
 - The view now mounts the calendar with Svelte 5's native `mount()` / `unmount()`, retiring the legacy `createClassComponent` bridge (and the deprecation warning that came with it).
-- `minAppVersion` unchanged at 1.8.7.
+
+**Fixes:**
+
+- **Hover feedback now shows on day/week cells that have a feature image.** Previously the hover highlight sat behind the image and was invisible; cells with images now brighten on hover like other cells. (This also removes a hover-time repaint of the image, smoothing out hover on image-heavy vaults.)
+- **Faster settings editing on large vaults.** Typing in a folder/format field no longer rescans every periodic-note folder on each keystroke — only the note set whose folder/format/enabled actually changed is reindexed.
 
 ## 2.1.1
 

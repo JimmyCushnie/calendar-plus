@@ -4,7 +4,7 @@
   import type { ICalendarSource } from "./calendar-ui/types";
   import { getMonthsWithNotes } from "src/io/yearNotes";
 
-  import type { ISettings } from "src/settings";
+  import type { ISettings, PeriodicNoteSettings } from "src/settings";
   import { moment } from "src/types/moment";
   import type { Moment } from "src/types/moment";
   import { activeFile, dailyNotes, monthlyNotes, quarterlyNotes, secondDailyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
@@ -44,11 +44,20 @@
   // `today` reactively.
   let displayedMonth = $state(moment());
 
-  // getToday has side effects (configure locale + reindex the note stores),
-  // so it lives in $effect.pre — which runs before the DOM updates, keeping
-  // the legacy `$:` ordering (stores populated before children render).
+  // Settings → locale + store reindex. Side effects, so this lives in
+  // $effect.pre (runs before the DOM updates, keeping the legacy `$:`
+  // ordering: stores populated before children render). Reindexing is
+  // *selective* — a store is only rescanned when its own folder/format/enabled
+  // changed (or on first run). Without this, typing a single character in any
+  // folder/format settings field rescanned all six note folders on every
+  // keystroke, which lagged noticeably on large vaults.
+  let prevSettings: ISettings | null = null;
   $effect.pre(() => {
-    today = getToday($settings);
+    const s = $settings;
+    configureGlobalMomentLocale(s.localeOverride, s.weekStart);
+    reindexChangedStores(s, prevSettings);
+    prevSettings = s;
+    today = moment();
   });
 
   // Recomputed when the displayed year changes (via the year-overview arrows,
@@ -74,15 +83,26 @@
     displayedMonth = date;
   }
 
-  function getToday(settings: ISettings) {
-    configureGlobalMomentLocale(settings.localeOverride, settings.weekStart);
-    dailyNotes.reindex();
-    weeklyNotes.reindex();
-    monthlyNotes.reindex();
-    yearlyNotes.reindex();
-    quarterlyNotes.reindex();
-    secondDailyNotes.reindex();
-    return moment();
+  // A store only needs rescanning when the inputs that determine its contents
+  // change: enabled, folder, or format. (Display-only settings like dotMode or
+  // weekendDays don't affect which notes exist; file create/delete/rename are
+  // handled incrementally by the vault listeners in view.ts.)
+  function periodChanged(
+    a: PeriodicNoteSettings,
+    b: PeriodicNoteSettings | undefined
+  ): boolean {
+    return (
+      !b || a.enabled !== b.enabled || a.folder !== b.folder || a.format !== b.format
+    );
+  }
+
+  function reindexChangedStores(s: ISettings, prev: ISettings | null) {
+    if (periodChanged(s.daily, prev?.daily)) dailyNotes.reindex();
+    if (periodChanged(s.weekly, prev?.weekly)) weeklyNotes.reindex();
+    if (periodChanged(s.monthly, prev?.monthly)) monthlyNotes.reindex();
+    if (periodChanged(s.yearly, prev?.yearly)) yearlyNotes.reindex();
+    if (periodChanged(s.quarterly, prev?.quarterly)) quarterlyNotes.reindex();
+    if (periodChanged(s.secondDaily, prev?.secondDaily)) secondDailyNotes.reindex();
   }
 
   // 1 minute heartbeat to keep `today` reflecting the current day.

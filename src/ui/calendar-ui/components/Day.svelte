@@ -125,7 +125,22 @@
     border-radius: 4px;
     background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.35));
     pointer-events: none;
+    transition: background 0.1s ease-in;
     z-index: 0;
+  }
+
+  /* Hover over an image cell: the base `.day:hover` background-color is hidden
+     behind the photo, so instead lighten the ::before overlay (the photo
+     appears to brighten). Keeping background-color stable (transparent) avoids
+     a repaint that re-composites the image on every hover — that was the
+     source of hover lag on image-heavy vaults. */
+  .day.has-background-image:hover,
+  .day.has-background-image.active:hover {
+    background-color: transparent;
+  }
+
+  .day.has-background-image:hover::before {
+    background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
   }
 
   /* Active state over an image: suppress the solid accent background and
