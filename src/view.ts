@@ -68,13 +68,11 @@ export default class CalendarView extends ItemView {
     this.register(
       settings.subscribe((val) => {
         this.settings = val;
-
-        // Refresh the calendar if settings change. Guard against the window
-        // between view construction and mount (and after unmount, when the
-        // ref is nulled).
-        if (this.calendar) {
-          this.calendar.tick();
-        }
+        // No calendar.tick() here: the Calendar wrapper subscribes to the
+        // settings store itself (an $effect.pre that reconfigures locale,
+        // reindexes changed stores, and bumps `today`), so it already
+        // refreshes on settings change. Calling tick() here too just doubled
+        // the per-change recompute.
       })
     );
   }

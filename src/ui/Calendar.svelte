@@ -105,16 +105,20 @@
     if (periodChanged(s.secondDaily, prev?.secondDaily)) secondDailyNotes.reindex();
   }
 
-  // 1 minute heartbeat to keep `today` reflecting the current day.
+  // 1 minute heartbeat to keep `today` reflecting the current day. Only act
+  // when the day actually rolls over — otherwise this would reassign `today`
+  // every 60s and needlessly recompute every cell's metadata once a minute.
   $effect(() => {
     const heartbeat = setInterval(() => {
-      tick();
+      const now = moment();
+      if (now.isSame(today, "day")) return;
 
-      const isViewingCurrentMonth = displayedMonth.isSame(today, "month");
-      if (isViewingCurrentMonth) {
-        // if it's midnight on the last day of the month, this will
-        // update the display to show the new month.
-        displayedMonth = today;
+      // Day rolled over (e.g. midnight). If we were viewing the (old) current
+      // month, follow into the new month so "today" stays visible.
+      const wasViewingCurrentMonth = displayedMonth.isSame(today, "month");
+      today = now;
+      if (wasViewingCurrentMonth) {
+        displayedMonth = now;
       }
     }, 1000 * 60);
 

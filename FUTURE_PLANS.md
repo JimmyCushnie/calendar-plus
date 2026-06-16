@@ -28,16 +28,29 @@ Non-blocking polish and cleanup deferred past the 1.6.0 / 1.7.0 baseline on `mai
 
 Svelte 5.56.3 cleared the *current* svelte advisory set (`npm audit` → 0 vulnerabilities at release), but this does **not** change the standing disposition: svelte ships new SSR-XSS advisories regularly, and **every one to date is SSR-only and not reachable here** (no SSR, no `{@html}` anywhere). No svelte version stays advisory-clean for long. **Disposition: accepted.** Do not chase future svelte advisories via migration *for the checker's sake* — bump svelte only when there's a tooling/maintenance reason.
 
-## Performance pass (deferred)
+## Performance pass (partially done — remaining items deferred)
 
-Load-testing 2.1.2 on a large vault surfaced some rendering/indexing cost. Two targeted fixes already landed in 2.1.2 — hover on feature-image cells no longer repaints/re-composites the photo (kept `background-color` stable, hover cue via the `::before` overlay), and the wrapper now reindexes note stores **selectively** (only the store whose `folder`/`format`/`enabled` changed, instead of all six on every settings keystroke). Those took the edge off, but a dedicated pass is wanted later. Threads to pursue, roughly in expected-impact order:
+Load-testing on a large vault surfaced some rendering/indexing cost. Several targeted fixes have landed across 2.1.2 / 2.1.3:
 
-- **Feature-image rendering on image-heavy vaults.** Even after the hover fix, many simultaneous `background-image` cells are GPU-compositing heavy. Options: generate/caches downscaled thumbnails instead of full-res `app://` images (Notebook Navigator does this via IndexedDB — see `reference/notebook-navigator-3.1.2/`), `content-visibility`/`contain` on cells, or capping image resolution. `getFeatureImageUrl` also runs per visible cell on every `tick()` (`getFileCache` + `getResourcePath`) — memoize per (file, mtime) so unchanged cells don't re-resolve.
-- **Metadata recompute on every `tick()`.** `getDailyMetadata`/`getWeeklyMetadata` rebuild for all visible cells whenever `today` changes (settings change, heartbeat). In `word-count-tasks` dot mode this includes `vault.cachedRead` per cell. Consider memoizing per (file, mtime) / only recomputing cells whose note changed.
-- **Settings reindex further.** Selective reindex (2.1.2) still rescans the *one* changed store on every keystroke while typing a folder/format. A short debounce (~200ms) on the reindex — or reindexing on input blur/commit rather than per keystroke — would remove the remaining per-keystroke scan. Low risk; deferred only because 2.1.2's selective fix made it "good enough to ship."
-- **Profile first.** Before changing anything, profile on a large vault (Obsidian devtools Performance tab) to confirm which of the above actually dominates — the above is hypothesis from reading the code + one load-test, not measurement.
+- **2.1.2:** feature-image cell hover no longer repaints/re-composites the photo (stable `background-color`, hover cue via the `::before` overlay); the wrapper reindexes note stores **selectively** (only the store whose `folder`/`format`/`enabled` changed).
+- **2.1.3:** `getFeatureImageUrl` is **memoized** per `(path, mtime, props)` (`src/io/featureImage.ts`) so unchanged cells don't re-resolve on every tick; the **heartbeat only reassigns `today` on an actual day rollover** (was reassigning every 60s → full recompute once a minute); and the **redundant settings-change recompute was deduped** (removed the `view.ts` settings-subscribe `tick()` — the Calendar wrapper's own `$effect.pre` already refreshes on `$settings` change, so it was bumping `today` twice per change).
 
-No firm priority or version target; pick this up when image/large-vault performance becomes worth a focused session.
+Remaining threads (deferred; **profile on a large vault with the devtools Performance tab first** — the below is hypothesis from reading the code, not measurement):
+
+- **Feature-image rendering on image-heavy vaults.** Many simultaneous `background-image` cells are GPU-compositing heavy regardless of the resolve cost (now memoized). Options: downscaled thumbnails instead of full-res `app://` images (Notebook Navigator caches these in IndexedDB — see `reference/notebook-navigator-3.1.2/`), `content-visibility`/`contain` on cells, or capping image resolution.
+- **`word-count-tasks` dot mode** does a `vault.cachedRead` per visible cell on every `tick()` (`src/ui/sources/{wordCount,tasks}.ts`). Same memoize-per-`(path, mtime)` treatment as feature images would help users on that (non-default) mode.
+- **The `today`-bump-as-universal-refresh design.** Every refresh (settings change, file create/delete/modify/rename, metadata change, active-file sync) works by reassigning `today`, which re-evaluates `getDailyMetadata(...)` for *all* visible cells (the metadata expressions read the note stores via `get()`, not reactively, so a blanket trigger is needed). A more granular model — making cells reactively depend on their own store entry so only changed cells recompute — would cut recompute scope, but it's a meaningful rearchitecture (touches the source/metadata layer) and is why a per-keystroke settings edit still recomputes all cells once (cheap now that image resolution is memoized, but not free). Don't attempt without profiling justifying it.
+- **Settings reindex debounce.** Selective reindex still rescans the *one* changed store per keystroke while typing a folder/format. A ~200ms debounce (or reindex on blur) would remove that; low value now that it's down to one store.
+
+No firm version target for the remainder; pick it up if large-vault performance becomes worth a focused, profile-driven session.
+
+## Idea: user-configurable calendar sources (low priority, uncertain — may not want it)
+
+Calendar Plus already has the **source architecture** inherited from the vendored calendar-ui (`ICalendarSource`, `metadataReducer`, and the `TRIGGER_ON_OPEN` event that lets external plugins inject sources), plus built-in sources (tags, streak, word-count, tasks, second-daily, feature-image). What it does **not** expose is a user-facing UI to pick/configure which sources drive the calendar — today that's collapsed into the single `dotMode` toggle ("Note exists" vs "Word count and open tasks").
+
+The unreleased upstream **Calendar 2.0.0-beta.2** (`reference/obsidian-calendar-plugin-2.0.0-beta.2/`) built exactly this: built-in `backlinks` / `links` / `zettels` sources (`src/ui/sources/`) plus a settings UI to enable/disable and configure them (`Sources.svelte`, `SourceSettingsModal.ts`). It's a solid design reference *if* this is ever wanted — the plumbing is already in place here.
+
+**Status: low priority and not clearly wanted.** Maintainer is unsure this fits Calendar Plus's scope. Captured only so the prior-art pointer isn't lost; do not build without an explicit product decision. (Note: `obsidian-periodic-notes-1.0.0-beta.3` has nothing relevant here — the sources system was the Calendar plugin's, not Periodic Notes'.)
 
 ## Idea: consider a second weekly note (undecided)
 
