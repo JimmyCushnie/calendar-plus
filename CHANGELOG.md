@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.5
+
+Adds a per-day way to hide a feature image. `minAppVersion` unchanged at 1.8.7.
+
+- **Hide feature image (per note).** Right-click a day whose note shows a feature image and choose **Hide feature image** — useful when a note has an incidental/functional picture you don't want on the calendar. The cell goes back to plain; right-click again for **Show feature image** to bring it back. It works by setting a `calendar-hide-image` flag in that note's frontmatter (written for you — no manual editing), so only that day is affected.
+
 ## 2.1.4
 
 Performance fix for settings editing on large vaults. No change to features or settings; `minAppVersion` unchanged at 1.8.7.
