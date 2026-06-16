@@ -3,8 +3,16 @@ import type { App, Point, TFile } from "obsidian";
 
 import type { AppWithDeletePrompt } from "src/types/obsidian-internal";
 
-export function showFileMenu(app: App, file: TFile, position: Point): void {
+export function showFileMenu(
+  app: App,
+  file: TFile,
+  position: Point,
+  // Optional hook to add caller-specific items (e.g. the feature-image
+  // toggle) before the standard file-menu items.
+  addExtraItems?: (menu: Menu) => void
+): void {
   const fileMenu = new Menu();
+  addExtraItems?.(fileMenu);
   fileMenu.addItem((item) =>
     item
       .setTitle("Delete")

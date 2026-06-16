@@ -16,6 +16,11 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
+import {
+  getFeatureImageUrl,
+  isFeatureImageHidden,
+  HIDE_FEATURE_IMAGE_KEY,
+} from "src/io/featureImage";
 import type { ISettings } from "src/settings";
 
 import Calendar from "./ui/Calendar.svelte";
@@ -264,6 +269,7 @@ export default class CalendarView extends ItemView {
             .setSection("calendar-daily")
             .onClick(() => void this.app.fileManager.trashFile(primaryNote))
         );
+        this.addFeatureImageMenuItem(menu, primaryNote);
       } else if (daily.enabled && !primaryNote) {
         menu.addItem((item) =>
           item
@@ -307,8 +313,55 @@ export default class CalendarView extends ItemView {
     if (!daily.enabled) return;
     const note = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
     if (!note) return;
-    showFileMenu(this.app, note, position);
+    showFileMenu(this.app, note, position, (menu) =>
+      this.addFeatureImageMenuItem(menu, note)
+    );
   };
+
+  // Adds a "Hide/Show feature image" toggle to a day-cell context menu when
+  // feature images are enabled and the note has (or has hidden) one. Writes a
+  // per-note frontmatter flag via processFrontMatter; the resulting
+  // metadataCache "changed" event ticks the calendar so the cell updates.
+  private addFeatureImageMenuItem(menu: Menu, note: TFile): void {
+    const { featureImage } = this.settings;
+    if (!featureImage.enabled) return;
+
+    if (isFeatureImageHidden(note, this.app)) {
+      menu.addItem((item) =>
+        item
+          .setTitle("Show feature image")
+          .setIcon("image")
+          .setSection("calendar-daily")
+          .onClick(() => void this.setFeatureImageHidden(note, false))
+      );
+    } else if (
+      getFeatureImageUrl(note, this.app, featureImage.frontmatterProperties)
+    ) {
+      menu.addItem((item) =>
+        item
+          .setTitle("Hide feature image")
+          .setIcon("image-off")
+          .setSection("calendar-daily")
+          .onClick(() => void this.setFeatureImageHidden(note, true))
+      );
+    }
+  }
+
+  private async setFeatureImageHidden(
+    note: TFile,
+    hidden: boolean
+  ): Promise<void> {
+    await this.app.fileManager.processFrontMatter(
+      note,
+      (frontmatter: Record<string, unknown>) => {
+        if (hidden) {
+          frontmatter[HIDE_FEATURE_IMAGE_KEY] = true;
+        } else {
+          delete frontmatter[HIDE_FEATURE_IMAGE_KEY];
+        }
+      }
+    );
+  }
 
   private openOrCreateSecondDailyNote = async (
     date: Moment,
