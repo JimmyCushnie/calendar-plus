@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.6
+
+Fixes the "Hide feature image" toggle from 2.1.5. `minAppVersion` unchanged at 1.8.7.
+
+- **Hide feature image now works, and no longer touches your notes.** In 2.1.5 the toggle wrote a `calendar-hide-image` property to the note's frontmatter — which added a Properties box to the top of notes that didn't otherwise have one, and didn't reliably hide the image. The hidden days are now remembered in the plugin's own data instead, so hiding/showing takes effect immediately and your notes are never modified.
+- If you used the toggle in 2.1.5, the leftover `calendar-hide-image:` line in those notes' frontmatter no longer does anything and can be deleted.
+
 ## 2.1.5
 
 Adds a per-day way to hide a feature image. `minAppVersion` unchanged at 1.8.7.
