@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.7
+
+Two small second-daily-note improvements. `minAppVersion` unchanged at 1.8.7.
+
+- **Active-note highlight for second daily notes.** When a second daily note is the active file, its day cell now gets a distinct grey highlight (the primary daily note's highlight stays the accent color), so you can see at a glance which note is open. Works over plain and feature-image cells.
+- **Option/Alt + click creates a second daily note if one doesn't exist yet.** Previously it only opened an existing one and did nothing otherwise; now it prompts to create (same as the right-click "Create Second Daily Note"). Opening an existing one is unchanged.
+
 ## 2.1.6
 
 Fixes the "Hide feature image" toggle from 2.1.5. `minAppVersion` unchanged at 1.8.7.
