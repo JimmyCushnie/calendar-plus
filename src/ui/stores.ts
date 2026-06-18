@@ -216,3 +216,27 @@ function createSelectedFileStore() {
 }
 
 export const activeFile = createSelectedFileStore();
+
+// Tracks whether the active file is a *second* daily note, so its day cell can
+// show a distinct (grey) highlight. Detection is folder-aware (checks the
+// configured second-daily folder + format) rather than relying on
+// getDateUIDFromFile, so a second daily note is never mistaken for a primary
+// daily note even when the two share a date format.
+function createActiveSecondDailyStore() {
+  const store = writable<string | null>(null);
+
+  return {
+    setFile: (file: TFile | null) => {
+      const { secondDaily } = get(settings);
+      if (!file || !secondDaily.enabled || !isFileInConfiguredFolder(file, secondDaily)) {
+        store.set(null);
+        return;
+      }
+      const date = getDateFromFile(file, "daily", secondDaily.format);
+      store.set(date ? getDateUID(date, "daily") : null);
+    },
+    ...store,
+  };
+}
+
+export const activeSecondDailyFile = createActiveSecondDailyStore();

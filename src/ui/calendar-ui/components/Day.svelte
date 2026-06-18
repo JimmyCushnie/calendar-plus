@@ -18,6 +18,7 @@
     today,
     displayedMonth = null,
     selectedId = null,
+    selectedSecondDailyId = null,
     weekendDays = [0, 6],
   }: {
     date: Moment;
@@ -28,10 +29,13 @@
     today: Moment;
     displayedMonth?: Moment | null;
     selectedId?: string | null;
+    selectedSecondDailyId?: string | null;
     weekendDays?: number[];
   } = $props();
 
   const isWeekendDay = $derived(isWeekend(date, weekendDays));
+  const dailyUid = $derived(getDateUID(date, "daily"));
+  const isSecondDailyActive = $derived(selectedSecondDailyId === dailyUid);
 </script>
 
 <td class:weekend={isWeekendDay}>
@@ -39,7 +43,8 @@
     {#snippet children(metadata)}
       <div
         class={`day ${(metadata.classes ?? []).join(" ")}`}
-        class:active={selectedId === getDateUID(date, "daily")}
+        class:active={selectedId === dailyUid && !isSecondDailyActive}
+        class:second-daily-active={isSecondDailyActive}
         class:adjacent-month={displayedMonth && !date.isSame(displayedMonth, "month")}
         class:today={date.isSame(today, "day")}
         class:has-background-image={!!metadata.backgroundImage}
@@ -103,6 +108,32 @@
   .day.active.today {
     color: var(--text-on-accent);
     background-color: var(--interactive-accent);
+  }
+
+  /* The second daily note for this day is the active file. Use a neutral grey
+     overlay (distinct from the accent fill used for the primary daily note) so
+     it reads as selected without competing with the purple. Implemented as a
+     translucent ::after so it works the same over plain cells and feature-image
+     cells; sits above the cell background / image (z-index: 0) but below the
+     number and dots (z-index: 1). The `.active` class is suppressed on these
+     cells (see the markup), so the two highlights never stack. */
+  .day.second-daily-active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 4px;
+    background-color: var(--text-muted);
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Today's number is normally accent-colored (--color-text-today); under the
+     grey second-daily overlay that reads as out-of-place purple, so restore
+     the normal day text color to match every other second-daily-active cell.
+     (The primary-active state has the analogous `.day.active.today` override.) */
+  .day.second-daily-active.today {
+    color: var(--color-text-day);
   }
 
   /* Feature image support ------------------------------------------------ */

@@ -24,6 +24,7 @@ import Calendar from "./ui/Calendar.svelte";
 import { showFileMenu } from "./ui/fileMenu";
 import {
   activeFile,
+  activeSecondDailyFile,
   dailyNotes,
   weeklyNotes,
   monthlyNotes,
@@ -549,6 +550,7 @@ export default class CalendarView extends ItemView {
   private updateActiveFile(): void {
     const file = this.app.workspace.getActiveFile();
     activeFile.setFile(file);
+    activeSecondDailyFile.setFile(file);
 
     if (this.calendar) {
       this.calendar.tick();
@@ -643,16 +645,12 @@ export default class CalendarView extends ItemView {
     const { workspace } = this.app;
 
     // Option/Alt + click is dedicated to the second daily note: open it if one
-    // exists, otherwise do nothing (creation stays a right-click action). Falls
-    // through to the normal primary-note flow when second daily is disabled, so
-    // Alt is a no-op in that case. Second daily notes don't drive the
-    // active-file highlight, so we don't call activeFile.setFile here.
+    // exists, otherwise prompt to create it (same open-or-create-with-confirm
+    // flow as the right-click "Create Second Daily Note"). Falls through to the
+    // normal primary-note flow when second daily is disabled, so Alt is a no-op
+    // in that case.
     if (altPressed && this.settings.secondDaily.enabled) {
-      const second = helperGetPeriodicNote(date, "daily", get(secondDailyNotes) ?? {});
-      if (second) {
-        const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
-        await leaf.openFile(second);
-      }
+      await this.openOrCreateSecondDailyNote(date, ctrlPressed);
       return;
     }
 

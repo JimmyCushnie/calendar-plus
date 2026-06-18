@@ -10,7 +10,7 @@
   import type { ISettings, PeriodicNoteSettings } from "src/settings";
   import { moment } from "src/types/moment";
   import type { Moment } from "src/types/moment";
-  import { activeFile, dailyNotes, monthlyNotes, quarterlyNotes, secondDailyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
+  import { activeFile, activeSecondDailyFile, dailyNotes, monthlyNotes, quarterlyNotes, secondDailyNotes, settings, weeklyNotes, yearlyNotes } from "./stores";
 
   let {
     sources,
@@ -199,6 +199,7 @@
     bind:displayedMonth
     localeData={{...today.localeData()}}
     selectedId={$activeFile}
+    selectedSecondDailyId={$activeSecondDailyFile}
     showWeekNums={$settings.weekly.enabled}
     showWeekNumsRight={$settings.showWeeklyNoteRight}
     quarterVisible={$settings.quarterly.enabled}

@@ -43,6 +43,7 @@
     // External sources (all optional)
     sources = [],
     selectedId,
+    selectedSecondDailyId = null,
     // Override-able local state. `displayedMonth` is two-way bound by the
     // wrapper (and pushed imperatively via the wrapper's setDisplayedMonth),
     // so it is $bindable; its default references `today`, hence the ordering.
@@ -69,6 +70,7 @@
     monthsWithNotes?: boolean[];
     sources?: ICalendarSource[];
     selectedId: string | null;
+    selectedSecondDailyId?: string | null;
     today?: Moment;
     displayedMonth?: Moment;
   } = $props();
@@ -199,6 +201,7 @@
               onHover={onHoverDay}
               metadata={getDailyMetadata(sources, day, today)}
               {selectedId}
+              {selectedSecondDailyId}
             />
           {/each}
           {#if showWeekNums && showWeekNumsRight}
