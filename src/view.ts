@@ -278,7 +278,10 @@ export default class CalendarView extends ItemView {
           item
             .setTitle("Create daily note")
             .setIcon("calendar-plus")
-            .setSection("calendar-actions")
+            // calendar-daily (not calendar-actions) so the primary-note item
+            // is always its own section, giving a consistent divider above the
+            // second-daily items whether or not the primary note exists.
+            .setSection("calendar-daily")
             .onClick(() => void this.openOrCreateDailyNote(date, false))
         );
       }
