@@ -466,6 +466,8 @@ export default class CalendarView extends ItemView {
     ].some(Boolean);
     if (changed) {
       this.updateActiveFile();
+      // A tracked note was removed — recompute so its dot/image clears.
+      this.calendar?.tick();
     }
   };
 
@@ -522,6 +524,8 @@ export default class CalendarView extends ItemView {
     ].some(Boolean);
     if (removed || added) {
       this.updateActiveFile();
+      // A tracked note moved in/out of a configured folder — recompute dots.
+      this.calendar?.tick();
     }
   };
 
@@ -554,14 +558,16 @@ export default class CalendarView extends ItemView {
     }
   };
 
+  // Update the active-file highlight stores. Deliberately does NOT tick the
+  // calendar: the highlight is driven reactively by these stores
+  // (`selectedId` / `selectedSecondDailyId`), so switching notes only
+  // re-renders the affected cells' highlight — no full metadata recompute.
+  // Callers that also change cell *content* (file delete/rename) tick
+  // explicitly afterward.
   private updateActiveFile(): void {
     const file = this.app.workspace.getActiveFile();
     activeFile.setFile(file);
     activeSecondDailyFile.setFile(file);
-
-    if (this.calendar) {
-      this.calendar.tick();
-    }
   }
 
   public revealActiveNote(): void {
