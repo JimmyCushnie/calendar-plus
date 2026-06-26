@@ -16,7 +16,7 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
-import { getFeatureImageUrl } from "src/io/featureImage";
+import { getFeatureImageUrl, invalidateFeatureImageCache } from "src/io/featureImage";
 import type { ISettings } from "src/settings";
 import type CalendarPlugin from "src/main";
 
@@ -537,6 +537,10 @@ export default class CalendarView extends ItemView {
       this.settings.featureImage.showForWeekly &&
       helperGetDateFromFile(file, "weekly", this.settings.weekly.format);
     if (isDaily || isWeekly) {
+      // The metadata cache is now authoritative for this note; drop any memo
+      // entry (possibly stale, stored during the earlier vault.modify before
+      // the cache reparsed) so the tick re-resolves the image fresh.
+      invalidateFeatureImageCache(file.path);
       this.calendar.tick();
     }
   };
