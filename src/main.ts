@@ -1,7 +1,8 @@
-import { Plugin } from "obsidian";
+import { Plugin, normalizePath } from "obsidian";
 import type { App, WorkspaceLeaf } from "obsidian";
 
 import { VIEW_TYPE_CALENDAR } from "./constants";
+import { initThumbnailCache, teardownThumbnailCache } from "./io/thumbnailCache";
 import { settings } from "./ui/stores";
 import { CalendarSettingsTab } from "./settings";
 import type { ISettings } from "./settings";
@@ -20,6 +21,16 @@ export default class CalendarPlugin extends Plugin {
   public options!: ISettings;
 
   async onload(): Promise<void> {
+    // Feature-image thumbnails are cached as files in this plugin's folder.
+    // Skip init if the manifest has no dir (then the feature falls back to
+    // rendering full-resolution images, as before).
+    if (this.manifest.dir) {
+      initThumbnailCache(
+        this.app,
+        normalizePath(`${this.manifest.dir}/thumbnail-cache`)
+      );
+    }
+
     this.register(
       settings.subscribe((value) => {
         this.options = value;
@@ -83,6 +94,12 @@ export default class CalendarPlugin extends Plugin {
     this.addSettingTab(new CalendarSettingsTab(this.app, this));
 
     this.app.workspace.onLayoutReady(() => this.initLeaf());
+  }
+
+  onunload(): void {
+    // Revoke the in-memory thumbnail object URLs (the cached files on disk
+    // persist, which is the point).
+    teardownThumbnailCache();
   }
 
   initLeaf(): void {

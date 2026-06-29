@@ -1,10 +1,14 @@
-import type { App } from "obsidian";
+import type { App, TFile } from "obsidian";
 import { get } from "svelte/store";
 
 import type { Moment } from "src/types/moment";
 import type { ICalendarSource, IDayMetadata } from "src/ui/calendar-ui/types";
 import { getPeriodicNote as helperGetPeriodicNote } from "src/io/periodicNoteHelpers";
-import { getFeatureImageUrl } from "src/io/featureImage";
+import { resolveFeatureImageFile } from "src/io/featureImage";
+import {
+  getThumbnailUrl,
+  isThumbnailCacheAvailable,
+} from "src/io/thumbnailCache";
 import { dailyNotes, settings, weeklyNotes } from "../stores";
 
 /**
@@ -19,6 +23,20 @@ import { dailyNotes, settings, weeklyNotes } from "../stores";
  * so it has zero cost when the feature is off.
  */
 export function createFeatureImageSource(app: App): ICalendarSource {
+  // Resolve a note to the URL we should paint as its cell background: a small
+  // cached thumbnail when available, the full-resolution image when there's no
+  // cache, or null while a thumbnail is still being generated (the cell shows
+  // nothing for that render; a ready callback re-renders it when the thumbnail
+  // lands).
+  const backgroundFor = (note: TFile, props: string[]): string | null => {
+    const imageFile = resolveFeatureImageFile(note, app, props);
+    if (!imageFile) return null;
+    if (!isThumbnailCacheAvailable()) {
+      return app.vault.getResourcePath(imageFile);
+    }
+    return getThumbnailUrl(imageFile);
+  };
+
   return {
     getDailyMetadata: async (date: Moment): Promise<IDayMetadata> => {
       const s = get(settings);
@@ -27,7 +45,7 @@ export function createFeatureImageSource(app: App): ICalendarSource {
       if (!file) return {};
       // Per-note opt-out (toggled from the day-cell menu, stored in settings).
       if (s.featureImage.hiddenNotes.includes(file.path)) return {};
-      const url = getFeatureImageUrl(file, app, s.featureImage.frontmatterProperties);
+      const url = backgroundFor(file, s.featureImage.frontmatterProperties);
       return url ? { backgroundImage: url } : {};
     },
 
@@ -39,7 +57,7 @@ export function createFeatureImageSource(app: App): ICalendarSource {
       const file = helperGetPeriodicNote(date, "weekly", get(weeklyNotes) ?? {});
       if (!file) return {};
       if (s.featureImage.hiddenNotes.includes(file.path)) return {};
-      const url = getFeatureImageUrl(file, app, s.featureImage.frontmatterProperties);
+      const url = backgroundFor(file, s.featureImage.frontmatterProperties);
       return url ? { backgroundImage: url } : {};
     },
   };

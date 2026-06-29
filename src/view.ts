@@ -16,7 +16,8 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
-import { getFeatureImageUrl, invalidateFeatureImageCache } from "src/io/featureImage";
+import { resolveFeatureImageFile, invalidateFeatureImageCache } from "src/io/featureImage";
+import { setThumbnailReadyCallback } from "src/io/thumbnailCache";
 import type { ISettings } from "src/settings";
 import type CalendarPlugin from "src/main";
 
@@ -145,6 +146,11 @@ export default class CalendarView extends ItemView {
     if (this.app.workspace.layoutReady) {
       this.updateActiveFile();
     }
+
+    // When a feature-image thumbnail finishes generating in the background,
+    // re-tick so its cell re-resolves and the image appears. (`this.calendar`
+    // is nulled on unmount, so this is a no-op after the view closes.)
+    setThumbnailReadyCallback(() => this.calendar?.tick());
   }
 
   onHoverDay = (
@@ -342,7 +348,7 @@ export default class CalendarView extends ItemView {
           .onClick(() => void this.setFeatureImageHidden(note, false))
       );
     } else if (
-      getFeatureImageUrl(note, this.app, featureImage.frontmatterProperties)
+      resolveFeatureImageFile(note, this.app, featureImage.frontmatterProperties)
     ) {
       menu.addItem((item) =>
         item
