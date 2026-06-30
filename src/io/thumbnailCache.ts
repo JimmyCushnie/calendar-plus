@@ -231,11 +231,16 @@ async function generateAndStore(
   file: TFile,
   key: string
 ): Promise<string | null> {
-  const srcBytes = await a.vault.readBinary(file);
-
+  // Read + decode inside the concurrency gate. The full-resolution source bytes
+  // are large; reading them *before* acquiring a slot would let a cold month
+  // (~30 images, all requested in one tick) hold ~30 full-res buffers in memory
+  // at once, even though only MAX_CONCURRENT_GENERATIONS decode at a time. Gating
+  // the read too caps peak source-byte memory at the concurrency limit — the
+  // win that matters on low-spec/mobile.
   await acquireGenerationSlot();
   let thumbBytes: ArrayBuffer | null;
   try {
+    const srcBytes = await a.vault.readBinary(file);
     thumbBytes = await generateThumbnail(srcBytes);
   } finally {
     releaseGenerationSlot();
