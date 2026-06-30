@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.8
+
+Performance and reliability for feature images and note switching. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Feature images are now cached as small thumbnails.** Instead of decoding the full-resolution photo for every cell on every render, each image is downscaled once into a thumbnail stored in the plugin folder (`.obsidian/plugins/calendar-plus/thumbnail-cache/`) and reused. This removes the stutter when opening the calendar with feature images and keeps a month full of images cheap, even on phones. Thumbnails regenerate when you change an image and are cleaned up when an image is deleted, renamed, or swapped out for a different one.
+- **Snappier note switching.** Switching the active note no longer recomputes every calendar cell — only the highlight moves.
+- **Fixed:** removing the last image from a note now clears its feature image from the day cell immediately, instead of lingering until a reload.
+- **Day-cell menu:** the divider above the second-daily items now shows consistently, whether or not the primary daily note exists.
+- README wording cleanups.
+
 ## 2.1.7
 
 Two small second-daily-note improvements. `minAppVersion` unchanged at 1.8.7.
