@@ -85,8 +85,11 @@
     }
   });
 
-  // Cancel a pending rescan if the view is torn down before it fires.
-  $effect(() => () => debouncedReindex.cancel());
+  // Cancel a pending rescan / tick if the view is torn down before they fire.
+  $effect(() => () => {
+    debouncedReindex.cancel();
+    coalescedTick.cancel();
+  });
 
   // Recomputed when the displayed year changes (via the year-overview arrows,
   // which mutate displayedMonth) or when any note store changes.
@@ -100,8 +103,21 @@
   );
 
   // Imperative API exposed to the view (CalendarView) via mount()'s exports.
-  export function tick() {
+  //
+  // A tick re-derives every visible cell's metadata (the sources read the note
+  // stores non-reactively, so reassigning `today` is what re-runs them). File
+  // events fan out into redundant ticks: editing the active daily note fires
+  // both onFileModified and onMetadataCacheChanged, and a sync burst fires one
+  // per modified file. Coalescing back-to-back calls into a single `today` bump
+  // (next frame) collapses those duplicates — a tick is idempotent, so merging
+  // them only removes wasted recompute; the refresh is delayed by at most the
+  // debounce window, which is imperceptible. (The thumbnail ready-callback is
+  // already debounced the same way.)
+  const coalescedTick = debounce(() => {
     today = moment();
+  }, 16);
+  export function tick() {
+    coalescedTick();
   }
 
   // Jump the calendar to a given month — used by the "Reveal active note"
