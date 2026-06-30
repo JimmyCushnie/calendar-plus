@@ -170,6 +170,39 @@ async function prepare(
   }
 }
 
+/**
+ * Garbage-collect: keep only thumbnails for the given in-use source images (at
+ * their current mtime) and delete every other cached thumbnail, in memory and
+ * on disk. Used to drop thumbnails for images that are no longer any note's
+ * feature image (e.g. a banner the user swapped out) even though the image
+ * still exists in the vault. Best-effort.
+ */
+export async function pruneThumbnailsExcept(inUseFiles: TFile[]): Promise<void> {
+  const a = app;
+  const dir = cacheDir;
+  if (!a || !dir) return;
+  const keep = new Set(inUseFiles.map(keyFor));
+
+  for (const key of [...urlByKey.keys()]) {
+    if (!keep.has(key)) {
+      const url = urlByKey.get(key);
+      if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+      urlByKey.delete(key);
+    }
+  }
+
+  try {
+    const listing = await a.vault.adapter.list(dir);
+    for (const full of listing.files) {
+      const name = full.substring(full.lastIndexOf("/") + 1);
+      if (!name.endsWith(".jpg")) continue;
+      if (!keep.has(name.slice(0, -4))) await a.vault.adapter.remove(full);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
 async function ensureDir(a: App, dir: string): Promise<void> {
   if (!dirReady) {
     dirReady = (async () => {

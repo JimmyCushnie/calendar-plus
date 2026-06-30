@@ -39,6 +39,7 @@ import {
   customTagsSource,
   secondDailyNoteSource,
   streakSource,
+  sweepUnusedThumbnailsOnce,
   tasksSource,
   wordCountSource,
 } from "./ui/sources";
@@ -151,6 +152,11 @@ export default class CalendarView extends ItemView {
     // re-tick so its cell re-resolves and the image appears. (`this.calendar`
     // is nulled on unmount, so this is a no-op after the view closes.)
     setThumbnailReadyCallback(() => this.calendar?.tick());
+
+    // Garbage-collect thumbnails for images no longer used as a feature image.
+    // Deferred + once per session: it scans all periodic notes, so keep it off
+    // the open/render path.
+    window.setTimeout(() => sweepUnusedThumbnailsOnce(this.app), 3000);
   }
 
   onHoverDay = (
