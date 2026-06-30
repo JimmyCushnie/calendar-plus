@@ -9,14 +9,8 @@ import type {
   IDot,
 } from "src/ui/calendar-ui/types";
 
+import { getContentMetrics } from "./contentMetrics";
 import { dailyNotes, settings, weeklyNotes } from "../stores";
-
-// Match open-task lines: `- [ ]` and `* [ ]` at the start of a marker.
-// Completed tasks (`- [x]`, `- [X]`) are intentionally excluded.
-//
-// Open-task regex ported from the original Calendar plugin
-// (https://github.com/liamcain/obsidian-calendar-plugin), MIT.
-const OPEN_TASK_RE = /(-|\*) \[ \]/g;
 
 /**
  * Count the number of unchecked task lines in a note. Self-gated on
@@ -28,8 +22,8 @@ async function getNumberOfRemainingTasks(note: TFile | null): Promise<number> {
   if (dotMode !== "word-count-tasks" || !note) {
     return 0;
   }
-  const fileContents = await window.app.vault.cachedRead(note);
-  return (fileContents.match(OPEN_TASK_RE) ?? []).length;
+  const { openTasks } = await getContentMetrics(note);
+  return openTasks;
 }
 
 async function getDots(file: TFile | null): Promise<IDot[]> {

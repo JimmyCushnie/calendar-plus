@@ -8,8 +8,9 @@ import type {
   IDayMetadata,
   IDot,
 } from "src/ui/calendar-ui/types";
-import { clamp, getWordCount } from "src/ui/calendar-ui/utils";
+import { clamp } from "src/ui/calendar-ui/utils";
 
+import { getContentMetrics } from "./contentMetrics";
 import { dailyNotes, settings, weeklyNotes } from "../stores";
 
 // Hard cap on how many word-count dots a single cell shows, matching the
@@ -35,8 +36,7 @@ async function getWordLengthAsDots(note: TFile | null): Promise<number> {
   if (perDot <= 0) {
     return 0;
   }
-  const fileContents = await window.app.vault.cachedRead(note);
-  const wordCount = getWordCount(fileContents);
+  const { wordCount } = await getContentMetrics(note);
   const numDots = wordCount / perDot;
   return clamp(Math.floor(numDots), 1, NUM_MAX_DOTS);
 }
