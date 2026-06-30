@@ -76,6 +76,36 @@ export function isThumbnailCacheAvailable(): boolean {
 }
 
 /**
+ * Remove all cached thumbnails for a given source image path (any mtime), in
+ * memory and on disk. Call this when the source image is deleted or renamed so
+ * its thumbnail doesn't orphan in the cache folder. Best-effort.
+ */
+export async function removeThumbnailsForSource(sourcePath: string): Promise<void> {
+  const a = app;
+  const dir = cacheDir;
+  if (!a || !dir) return;
+  const prefix = `${hashPath(sourcePath)}-`;
+
+  for (const key of [...urlByKey.keys()]) {
+    if (key.startsWith(prefix)) {
+      const url = urlByKey.get(key);
+      if (url?.startsWith("blob:")) URL.revokeObjectURL(url);
+      urlByKey.delete(key);
+    }
+  }
+
+  try {
+    const listing = await a.vault.adapter.list(dir);
+    for (const full of listing.files) {
+      const name = full.substring(full.lastIndexOf("/") + 1);
+      if (name.startsWith(prefix)) await a.vault.adapter.remove(full);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+/**
  * The display URL for an image file's thumbnail.
  * - Returns the ready thumbnail (or a cached full-res fallback) when available.
  * - Returns null while a thumbnail is still being prepared — callers should

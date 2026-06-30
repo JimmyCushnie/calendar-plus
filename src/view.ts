@@ -16,8 +16,8 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
-import { resolveFeatureImageFile, invalidateFeatureImageCache } from "src/io/featureImage";
-import { setThumbnailReadyCallback } from "src/io/thumbnailCache";
+import { resolveFeatureImageFile, invalidateFeatureImageCache, isImagePath } from "src/io/featureImage";
+import { setThumbnailReadyCallback, removeThumbnailsForSource } from "src/io/thumbnailCache";
 import type { ISettings } from "src/settings";
 import type CalendarPlugin from "src/main";
 
@@ -462,6 +462,9 @@ export default class CalendarView extends ItemView {
 
   private onFileDeleted = async (file: TAbstractFile): Promise<void> => {
     if (!(file instanceof TFile)) return;
+    // If a feature-image source was deleted, drop its cached thumbnail so it
+    // doesn't orphan in the cache folder.
+    if (isImagePath(file.path)) void removeThumbnailsForSource(file.path);
     const changed = [
       dailyNotes.removeFile(file),
       weeklyNotes.removeFile(file),
@@ -509,6 +512,9 @@ export default class CalendarView extends ItemView {
   private onFileRenamed = (file: TAbstractFile, oldPath: string): void => {
     if (!this.app.workspace.layoutReady || !this.calendar) return;
     if (!(file instanceof TFile)) return;
+    // A renamed image's thumbnail is keyed on the old path; drop it (the new
+    // path regenerates on demand) so it doesn't orphan.
+    if (isImagePath(oldPath)) void removeThumbnailsForSource(oldPath);
     // Remove the entry the old path mapped to, then add the new file. Each
     // call is a no-op if the file doesn't match that periodicity — same
     // gating logic as create/delete, just doubled up for the move.

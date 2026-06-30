@@ -5,7 +5,7 @@ const IMAGE_EXTENSIONS = new Set([
   "png", "jpg", "jpeg", "gif", "bmp", "svg", "webp", "avif",
 ]);
 
-function isImagePath(path: string): boolean {
+export function isImagePath(path: string): boolean {
   const ext = path.split(".").pop()?.toLowerCase() ?? "";
   return IMAGE_EXTENSIONS.has(ext);
 }
