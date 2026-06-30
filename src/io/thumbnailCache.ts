@@ -2,9 +2,9 @@ import { normalizePath } from "obsidian";
 import type { App, TFile } from "obsidian";
 import { debounce } from "obsidian";
 
-// Persistent, downscaled-thumbnail cache for feature images.
+// Persistent, downscaled-thumbnail cache for featured images.
 //
-// Why this exists: feature images are full-resolution photos used as ~40px cell
+// Why this exists: featured images are full-resolution photos used as ~40px cell
 // backgrounds. Decoding the full image on every render (especially a month of
 // them when the sidebar opens) is expensive and memory-heavy. Instead we
 // generate a small thumbnail once, store it as a file in the plugin's folder
@@ -174,7 +174,7 @@ async function prepare(
  * Garbage-collect: keep only thumbnails for the given in-use source images (at
  * their current mtime) and delete every other cached thumbnail, in memory and
  * on disk. Used to drop thumbnails for images that are no longer any note's
- * feature image (e.g. a banner the user swapped out) even though the image
+ * featured image (e.g. a banner the user swapped out) even though the image
  * still exists in the vault. Best-effort.
  */
 export async function pruneThumbnailsExcept(inUseFiles: TFile[]): Promise<void> {

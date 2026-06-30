@@ -94,7 +94,7 @@
     background-color: var(--interactive-accent-hover);
   }
 
-  /* Feature image support ------------------------------------------------ */
+  /* Featured image support ------------------------------------------------ */
 
   .week-num.has-background-image {
     background-size: cover;

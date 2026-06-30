@@ -25,7 +25,7 @@
   // handed a new promise. For feature-image cells that meant the background
   // `<div>` was destroyed and recreated on every tick — forcing the browser to
   // reload and recomposite the image, a major source of lag while typing or
-  // syncing with feature images enabled. Resolving into `$state` and rendering
+  // syncing with featured images enabled. Resolving into `$state` and rendering
   // it once lets Svelte diff the cell's attributes in place: when the resolved
   // values are unchanged (same dots, same image URL), the DOM — and the image —
   // is left untouched. It also avoids the blank flash `{#await}` showed while a

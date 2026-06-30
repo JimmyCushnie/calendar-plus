@@ -37,10 +37,10 @@ export interface FeatureImageSettings {
    * an array; the settings UI shows a comma-separated text field.
    */
   frontmatterProperties: string[];
-  /** When true, weekly-note cells also show feature images. */
+  /** When true, weekly-note cells also show featured images. */
   showForWeekly: boolean;
   /**
-   * Vault paths of notes whose feature image is hidden on the calendar
+   * Vault paths of notes whose featured image is hidden on the calendar
    * (per-note opt-out, toggled from the day-cell context menu). Stored here
    * rather than in note frontmatter so it doesn't add a Properties box to the
    * note.
@@ -403,12 +403,12 @@ export class CalendarSettingsTab extends PluginSettingTab {
   private renderFeatureImageSection(sectionEl: HTMLElement): void {
     sectionEl.empty();
 
-    new Setting(sectionEl).setName("Feature images").setHeading();
+    new Setting(sectionEl).setName("Featured images").setHeading();
 
     new Setting(sectionEl)
       .setName("Enable")
       .setDesc(
-        "Show the feature image from a daily or weekly note as the cell background."
+        "Show the featured image from a daily or weekly note as the cell background."
       )
       .addToggle((toggle) => {
         toggle.setValue(this.plugin.options.featureImage.enabled);
@@ -446,7 +446,7 @@ export class CalendarSettingsTab extends PluginSettingTab {
     new Setting(sectionEl)
       .setName("Show for weekly notes")
       .setDesc(
-        "Show feature images on weekly note cells in addition to daily note cells."
+        "Show featured images on weekly note cells in addition to daily note cells."
       )
       .addToggle((toggle) => {
         toggle.setValue(this.plugin.options.featureImage.showForWeekly);

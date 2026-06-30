@@ -19,7 +19,7 @@ function extractLinkpath(raw: string): string {
 }
 
 /**
- * Resolve a note's feature image to the vault image **file** (not a URL — the
+ * Resolve a note's featured image to the vault image **file** (not a URL — the
  * caller turns it into a thumbnail or, failing that, a resource path).
  *
  * Strategy:
@@ -65,7 +65,7 @@ export function resolveFeatureImageFile(
  * `vault.modify` event bumps `mtime` *before* the metadata cache is reparsed —
  * so a resolve triggered by `modify` can store a stale entry under the new
  * mtime, which a later metadata-change tick would then return (e.g. removing
- * the last image from a note left the feature image showing until reload).
+ * the last image from a note left the featured image showing until reload).
  */
 export function invalidateFeatureImageCache(path: string): void {
   fileCache.delete(path);

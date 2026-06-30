@@ -153,7 +153,7 @@ export default class CalendarView extends ItemView {
     // is nulled on unmount, so this is a no-op after the view closes.)
     setThumbnailReadyCallback(() => this.calendar?.tick());
 
-    // Garbage-collect thumbnails for images no longer used as a feature image.
+    // Garbage-collect thumbnails for images no longer used as a featured image.
     // Deferred + once per session: it scans all periodic notes, so keep it off
     // the open/render path.
     window.setTimeout(() => sweepUnusedThumbnailsOnce(this.app), 3000);
@@ -336,8 +336,8 @@ export default class CalendarView extends ItemView {
     );
   };
 
-  // Adds a "Hide/Show feature image" toggle to a day-cell context menu when
-  // feature images are enabled and the note has (or has hidden) one. The
+  // Adds a "Hide/Show featured image" toggle to a day-cell context menu when
+  // featured images are enabled and the note has (or has hidden) one. The
   // hidden state lives in plugin data (settings.featureImage.hiddenNotes), so
   // toggling it persists via writeOptions and the cell refreshes through the
   // settings store — no note edit, no metadata-cache dependency.
@@ -348,7 +348,7 @@ export default class CalendarView extends ItemView {
     if (featureImage.hiddenNotes.includes(note.path)) {
       menu.addItem((item) =>
         item
-          .setTitle("Show feature image")
+          .setTitle("Show featured image")
           .setIcon("image")
           .setSection("calendar-daily")
           .onClick(() => void this.setFeatureImageHidden(note, false))
@@ -358,7 +358,7 @@ export default class CalendarView extends ItemView {
     ) {
       menu.addItem((item) =>
         item
-          .setTitle("Hide feature image")
+          .setTitle("Hide featured image")
           .setIcon("image-off")
           .setSection("calendar-daily")
           .onClick(() => void this.setFeatureImageHidden(note, true))
@@ -553,7 +553,7 @@ export default class CalendarView extends ItemView {
     // Re-tick when a daily or weekly note's metadata changes (e.g. the user
     // edits the `banner` frontmatter property). vault.modify fires before the
     // cache updates, so this handler is the reliable post-update trigger for
-    // frontmatter-driven feature images.
+    // frontmatter-driven featured images.
     const isDaily =
       this.settings.daily.enabled &&
       helperGetDateFromFile(file, "daily", this.settings.daily.format);

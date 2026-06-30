@@ -6,7 +6,7 @@ Calendar Plus is a sidebar calendar for [Obsidian](https://obsidian.md/) with da
 2. **Month, year, and quarter labels are clickable.** Click the labels in the calendar header to open or create the corresponding periodic note, the same way day and week-number cells work.
 3. **Dots default to "a note exists."** By default, a dot on a day or week-number cell simply indicates that the corresponding note exists. If you prefer richer indicators, the **Dot style** setting can show word-count dots and an open-task dot for daily and weekly notes.
 4. **A second daily note per day.** Right-click any day cell (or Option/Alt + click) to open or create a second daily note alongside the primary one — useful for call notes, separating work and personal notes, keeping a journal, or anything else you want to keep separate. It has its own folder, date format, and template.
-5. **Feature images.** Optionally show a daily or weekly note's image — a frontmatter banner/cover or the note's first embedded image — as the calendar cell background, great for keeping a visual journal.
+5. **Featured images.** Optionally show a daily or weekly note's image — a frontmatter banner/cover or the note's first embedded image — as the calendar cell background, great for keeping a visual journal.
 6. **A year navigator.** An optional history button in the calendar header opens a 12-month grid for quickly jumping between months and years.
 
 There are also many bug fixes that bring both the calendar view and periodic note functionality up to modern Obsidian plugin standards.
@@ -19,7 +19,7 @@ There are also many bug fixes that bring both the calendar view and periodic not
 - Built-in periodic notes for daily, weekly, monthly, quarterly, and yearly periodicities. Each periodicity has its own folder, filename format, and optional template — no separate Periodic Notes plugin required.
 - Click a day cell to open or create that day's note. Click a week-number cell to open or create the weekly note. Click the month, year, or quarter labels in the calendar header to open or create the corresponding monthly / yearly / quarterly note.
 - **Second daily notes:** right-click any day cell (or Option/Alt + click) to open or create a second daily note for that date. It has its own folder, date format, and template — completely independent of the primary daily note. A second dot (at half opacity) appears on day cells where a second daily note exists.
-- **Feature images:** optionally show a daily or weekly note's image (from its frontmatter, or its first embedded image) as the calendar cell background. Opt-in.
+- **Featured images:** optionally show a daily or weekly note's image (from its frontmatter, or its first embedded image) as the calendar cell background. Opt-in.
 - **Year navigator:** an optional history button in the header opens a compact 12-month grid for jumping between months and years, with a dot on each month that contains any note. Opt-in.
 - By default, a filled dot on a day cell means a periodic note exists for that day, and a dot on a week-number cell means a weekly note exists. The optional **Dot style** setting can switch this to word-count dots plus an open-task dot for daily and weekly notes.
 - The calendar view can live anywhere. Drag it to the left sidebar, into the main content area, pin it as a tab, or pop it into its own window — Calendar Plus preserves the placement across plugin reloads.
@@ -80,13 +80,13 @@ An optional second daily note per day, accessed by right-clicking a day cell (or
 
 When enabled, right-clicking any day cell shows a context menu. If neither note exists yet, the menu offers **Create daily note** and **Create second daily note**. When the primary daily note exists, **Open daily note** and **Delete daily note** appear at the top; when the second daily note exists, **Open second daily note** and **Delete second daily note** are shown (deletions respect your Obsidian trash preference). If the primary note exists, its standard file actions appear below. You can also **Option/Alt + click** a day cell to open its second daily note, or create one if it doesn't exist yet (add Cmd/Ctrl to open it in a new tab or split). A half-opacity dot marks day cells that have a second daily note, alongside any primary-note dots.
 
-#### Feature images
+#### Featured images
 
-Optionally show a note's image as the calendar cell background, turning your calendar into a visual journal. Configure under Settings → Calendar Plus → Feature images:
+Optionally show a note's image as the calendar cell background, turning your calendar into a visual journal. Configure under Settings → Calendar Plus → Featured images:
 
-- **Enable** turns feature images on for daily-note cells.
+- **Enable** turns featured images on for daily-note cells.
 - **Frontmatter properties** is a comma-separated, priority-ordered list of frontmatter properties to check for an image path (default `banner, image, cover`). The first property that points to a vault image wins; if none match, the note's first embedded image is used. Vault images only — external URLs are ignored.
-- **Show for weekly notes** also applies feature images to weekly-note cells.
+- **Show for weekly notes** also applies featured images to weekly-note cells.
 
 A dark gradient keeps the date number and dots readable over any image, and the selected day shows a translucent accent overlay so the image stays visible.
 
@@ -108,9 +108,9 @@ By default, a filled dot on a day cell means a periodic note exists for that day
 
 It's a second note you can create for any day, separate from your primary daily note. Common uses: call notes, separating work and personal notes, keeping a journal, or anything else you'd rather not mix into your main daily note. Both notes are navigable from the calendar. Enable it under Settings → Calendar Plus → Periodic notes → Second daily notes and configure a distinct folder or filename format to keep the two sets of files separate.
 
-### What are feature images?
+### What are featured images?
 
-When enabled, Calendar Plus shows a daily or weekly note's image as that calendar cell's background — great for journaling, giving you a photo-per-day view of your month. The image comes from a frontmatter property (it checks `banner`, then `image`, then `cover` by default — all configurable), or the note's first embedded image if none is set. Only images stored in your vault are used. Turn it on under Settings → Calendar Plus → Feature images.
+When enabled, Calendar Plus shows a daily or weekly note's image as that calendar cell's background — great for journaling, giving you a photo-per-day view of your month. The image comes from a frontmatter property (it checks `banner`, then `image`, then `cover` by default — all configurable), or the note's first embedded image if none is set. Only images stored in your vault are used. Turn it on under Settings → Calendar Plus → Featured images.
 
 ### What is the history navigator?
 

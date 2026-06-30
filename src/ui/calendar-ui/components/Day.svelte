@@ -136,7 +136,7 @@
     color: var(--color-text-day);
   }
 
-  /* Feature image support ------------------------------------------------ */
+  /* Featured image support ------------------------------------------------ */
 
   .day.has-background-image {
     background-size: cover;
