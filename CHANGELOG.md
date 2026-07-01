@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.1.9
+
+More performance tuning for the calendar refresh and featured images, plus a wording tweak. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Smoother during sync and rapid edits.** Calendar refreshes are now coalesced, so a burst of file changes (e.g. when sync catches up, or a frontmatter edit that fires several events at once) recomputes the calendar once instead of repeatedly.
+- **Lower memory when opening an image-heavy month.** Featured-image thumbnails now read their source images a few at a time rather than all at once, avoiding a memory spike on the first open of a month full of images — especially on phones.
+- **Faster "Word count and open tasks" dot mode.** Notes are now read and measured once per change instead of repeatedly on every refresh, so that dot mode stays responsive while typing.
+- **Wording:** "feature image" is now "featured image" throughout the settings, day-cell menu, and documentation.
+
 ## 2.1.8
 
 Performance and reliability for feature images and note switching. No new settings; `minAppVersion` unchanged at 1.8.7.

@@ -2,7 +2,7 @@
   "id": "calendar-plus",
   "name": "Calendar Plus",
   "description": "Calendar view with integrated daily, weekly, monthly, quarterly, and yearly notes. An update of the Calendar plugin.",
-  "version": "2.1.8",
+  "version": "2.1.9",
   "author": "Matt Maiorana",
   "authorUrl": "https://github.com/mattmaiorana",
   "isDesktopOnly": false,
