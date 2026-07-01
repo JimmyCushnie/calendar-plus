@@ -266,7 +266,10 @@ async function generateThumbnail(srcBytes: ArrayBuffer): Promise<ArrayBuffer | n
     const w = Math.max(1, Math.round(bitmap.width * scale));
     const h = Math.max(1, Math.round(bitmap.height * scale));
 
-    const canvas = document.createElement("canvas");
+    // `activeDocument` (not `document`) for popout-window compatibility, per
+    // the Obsidian plugin checker. The canvas is off-DOM (never attached), so
+    // this is a checker-hygiene change rather than a functional one.
+    const canvas = activeDocument.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
