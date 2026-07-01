@@ -385,6 +385,21 @@ export default class CalendarView extends ItemView {
     });
   }
 
+  // Migrate a hidden note's stored path on rename/move so its featured image
+  // stays hidden (hiddenNotes stores vault paths, which otherwise go stale).
+  // No-op unless the old path was actually in the list.
+  private migrateHiddenNotePath(oldPath: string, newPath: string): void {
+    if (!this.settings.featureImage.hiddenNotes.includes(oldPath)) return;
+    void this.plugin.writeOptions((prev) => ({
+      featureImage: {
+        ...prev.featureImage,
+        hiddenNotes: prev.featureImage.hiddenNotes.map((path) =>
+          path === oldPath ? newPath : path
+        ),
+      },
+    }));
+  }
+
   private openOrCreateSecondDailyNote = async (
     date: Moment,
     ctrlPressed: boolean
@@ -521,6 +536,9 @@ export default class CalendarView extends ItemView {
     // A renamed image's thumbnail is keyed on the old path; drop it (the new
     // path regenerates on demand) so it doesn't orphan.
     if (isImagePath(oldPath)) void removeThumbnailsForSource(oldPath);
+    // If a note with a hidden featured image was renamed/moved, migrate its
+    // stored path so it stays hidden (hiddenNotes holds vault paths).
+    this.migrateHiddenNotePath(oldPath, file.path);
     // Remove the entry the old path mapped to, then add the new file. Each
     // call is a no-op if the file doesn't match that periodicity — same
     // gating logic as create/delete, just doubled up for the move.

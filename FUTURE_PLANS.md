@@ -57,9 +57,9 @@ The unreleased upstream **Calendar 2.0.0-beta.2** (`reference/obsidian-calendar-
 
 The Second Daily Note feature (2.0.0) gives a second, independent daily note per day. A parallel "second weekly note" could extend the same pattern to weekly notes. **Undecided — not committed.** For now a second daily note is enough; revisit only if a concrete need for a second weekly note comes up. If pursued, it would mirror the second-daily design: a `secondWeekly: PeriodicNoteSettings` key, a dedicated store factory keyed on `"weekly"`, a self-gated dot source, and access via the week-number cell's right-click menu (and possibly Option/Alt + click), reusing the same open/create + trash patterns.
 
-## Optional: feature-image "hidden notes" path staleness (deferred, low priority)
+## DONE: feature-image "hidden notes" path staleness on rename
 
-The per-note "Hide feature image" toggle (2.1.6) stores vault **paths** in `settings.featureImage.hiddenNotes`. If a hidden note is renamed or moved, its stored path goes stale: the image reappears on the cell and the orphaned path lingers in the list. Daily notes are date-named and rarely renamed, so this is deferred. If it ever matters, options: (a) update `hiddenNotes` entries in `CalendarView.onFileRenamed` (it already handles the vault `rename` event for the note stores — swap `oldPath` → new path there via `writeOptions`); and/or (b) lazily prune entries whose file no longer exists. Either is a few lines; not worth the churn until there's a reason.
+The per-note "Hide featured image" toggle (2.1.6) stores vault **paths** in `settings.featureImage.hiddenNotes`. Previously, if a hidden note was renamed or moved, its stored path went stale: the image reappeared on the cell and the orphaned path lingered. **Fixed:** `CalendarView.onFileRenamed` now calls `migrateHiddenNotePath(oldPath, file.path)`, which swaps the old path → new path via `writeOptions` (no-op unless the old path was actually hidden). The remaining half of the original idea — (b) lazily pruning `hiddenNotes` entries whose file no longer *exists* (deletion, not rename) — is still deferred and low-value: an orphaned entry for a deleted note is harmless (it just never matches a live note again) and daily notes are rarely deleted. Not worth the churn until there's a reason.
 
 ## Optional: richer context menu for existing Second Daily Notes (partially done, deferred)
 
@@ -128,6 +128,18 @@ Previously the type-aware checker flagged `this.calendar` calls in `src/view.ts`
 ### 3. The dependency-driven warning cascade — RESOLVED (2.0.1)
 
 The 2.0.0 review showed *hundreds* of `no-unsafe-*` warnings because the `obsidian` dependency was a GitHub tarball that the review's registry-only `npm ci` couldn't fetch, leaving all types unresolved. Resolved in 2.0.1 by switching to the npm `obsidian@1.8.7` devDependency. See CLAUDE.md → "Dependency + type-aware lint" — do not reintroduce a GitHub-sourced dependency.
+
+## Global `app` usage — prefer `this.app` (deferred checker item)
+
+The Obsidian plugin checker recommends using the plugin-provided `this.app` reference over the global `app` instance. Calendar Plus still reaches for the global (as `window.app`) in its module-level io/helper layer, where there is no plugin/`this` in scope:
+- `src/io/periodicNoteHelpers.ts` (`window.app` in `getTemplateInfo`, `getAllPeriodicNotes`, and the fold-manager load) — the most-used helper module.
+- `src/io/periodicNotes.ts` (vault/workspace + fold-manager save).
+- `src/ui/modal.ts` (`ConfirmationModal` construction).
+- `src/ui/sources/tags.ts` and `src/ui/sources/contentMetrics.ts` (`window.app.metadataCache` / `vault.cachedRead`).
+
+Also `window.setTimeout` in `src/view.ts` (harmless; not popout-sensitive) and the custom `window._bundledLocaleWeekSpec` global (a plugin-set moment-locale field, not a DOM/global-app misuse) — neither is the flagged pattern.
+
+**Why deferred:** this is not a one-liner. These are pure functions and factories called from many sites; removing the global means **threading an `App` (or the plugin) argument through the helper layer and every call site** — a moderate refactor with real churn and regression surface, for a non-blocking recommendation with no user-visible effect. The sources (`tags.ts`, `contentMetrics.ts`) already receive `app`/settings in some paths, so those are the cheapest to convert; the `periodicNoteHelpers` layer is the widest. Take it on as a focused pass (ideally alongside another `io/`-layer change), not opportunistically. `getDateUIDFromFile` and the source factories that already take `app` are the model to extend.
 
 ## Review npm audit findings for dev dependencies (deferred)
 
