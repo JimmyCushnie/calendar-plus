@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.10
+
+Small fixes. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Fixed:** a hidden featured image now stays hidden when you rename or move its note (previously the image reappeared, because the hidden-note list tracked the old path).
+- **Internal:** thumbnail generation uses `activeDocument` for popout-window compatibility (clears an Obsidian plugin-checker warning; no behavior change).
+
 ## 2.1.9
 
 More performance tuning for the calendar refresh and featured images, plus a wording tweak. No new settings; `minAppVersion` unchanged at 1.8.7.
