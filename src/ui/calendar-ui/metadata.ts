@@ -10,7 +10,17 @@ async function metadataReducer(
     classes: [],
     dataAttributes: {},
   };
-  const metas = await Promise.all(promisedMetadata);
+  // A single source that rejects (e.g. a failed cachedRead) must not reject the
+  // whole cell's metadata — that would leave the cell's rendered state stale
+  // (MetadataResolver has no rejection path) and log an unhandled rejection.
+  // Treat a failed source as contributing nothing.
+  const metas = await Promise.all(
+    promisedMetadata.map((p) =>
+      p.catch(
+        (): IDayMetadata => ({ dots: [], classes: [], dataAttributes: {} })
+      )
+    )
+  );
   return metas.reduce<IDayMetadata>(
     (acc, meta) => ({
       classes: [...(acc.classes ?? []), ...(meta.classes ?? [])],
