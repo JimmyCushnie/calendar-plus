@@ -58,6 +58,10 @@ export default class CalendarView extends ItemView {
   private calendar: CalendarComponent | null = null;
   private settings!: ISettings;
   private unregisterThumbnailReady: (() => void) | null = null;
+  // Guards against a rapid double Alt-click creating the same second daily note
+  // twice (createPeriodicNote is called directly here, bypassing the shared
+  // in-flight guard in periodicNotes.ts). Keyed by the target filename.
+  private secondDailyCreateInFlight = new Set<string>();
 
   // The plugin ref is used to persist settings the view itself can change
   // (currently the per-note feature-image hidden list) via writeOptions.
@@ -418,9 +422,20 @@ export default class CalendarView extends ItemView {
       const secondDailySettings = this.settings.secondDaily;
       const filename = date.format(secondDailySettings.format);
       const create = async () => {
-        const file = await createPeriodicNote("daily", date, secondDailySettings);
-        const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
-        await leaf.openFile(file, { active: true });
+        if (this.secondDailyCreateInFlight.has(filename)) return;
+        this.secondDailyCreateInFlight.add(filename);
+        try {
+          const file = await createPeriodicNote("daily", date, secondDailySettings);
+          const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
+          await leaf.openFile(file, { active: true });
+          // Synchronous highlight update, matching the primary daily/weekly
+          // paths — drives the grey second-daily highlight without waiting on
+          // file-open event timing (unreliable on mobile).
+          activeFile.setFile(file);
+          activeSecondDailyFile.setFile(file);
+        } finally {
+          this.secondDailyCreateInFlight.delete(filename);
+        }
       };
       if (this.settings.shouldConfirmBeforeCreate) {
         createConfirmationDialog({
@@ -437,6 +452,8 @@ export default class CalendarView extends ItemView {
 
     const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
     await leaf.openFile(existingFile);
+    activeFile.setFile(existingFile);
+    activeSecondDailyFile.setFile(existingFile);
   };
 
   private onContextMenuWeek = (date: Moment, event: MouseEvent): void => {
