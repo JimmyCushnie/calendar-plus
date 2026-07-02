@@ -38,10 +38,16 @@ const urlByKey = new Map<string, string>();
 // key -> in-progress preparation, so concurrent requests share one job.
 const inFlight = new Map<string, Promise<void>>();
 
-let onReady: (() => void) | null = null;
+// Ready callbacks (one per open calendar view). A Set rather than a single
+// slot so multiple views — e.g. a calendar dragged into a popout window — all
+// refresh when a thumbnail lands, and a closed view's callback is removed
+// rather than lingering and pointing at a torn-down calendar.
+const readyCallbacks = new Set<() => void>();
 // Coalesce a burst of "thumbnail ready" events (e.g. a cold month) into one
 // refresh so the calendar re-renders once rather than per image.
-const fireReady = debounce(() => onReady?.(), 50, true);
+const fireReady = debounce(() => {
+  for (const cb of readyCallbacks) cb();
+}, 50, true);
 
 let activeGenerations = 0;
 const generationQueue: (() => void)[] = [];
@@ -59,9 +65,14 @@ export function initThumbnailCache(a: App, dir: string): void {
   dirReady = null;
 }
 
-/** Registers the callback fired (debounced) when a thumbnail becomes ready. */
-export function setThumbnailReadyCallback(cb: () => void): void {
-  onReady = cb;
+/**
+ * Register a callback fired (debounced) when a thumbnail becomes ready. Returns
+ * an unregister function — each calendar view registers its own tick on open
+ * and drops it on close.
+ */
+export function registerThumbnailReadyCallback(cb: () => void): () => void {
+  readyCallbacks.add(cb);
+  return () => readyCallbacks.delete(cb);
 }
 
 /** Revoke object URLs and reset. Called on plugin unload. */
@@ -72,7 +83,7 @@ export function teardownThumbnailCache(): void {
   }
   urlByKey.clear();
   inFlight.clear();
-  onReady = null;
+  readyCallbacks.clear();
   app = null;
   cacheDir = null;
   dirReady = null;

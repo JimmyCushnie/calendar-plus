@@ -17,7 +17,7 @@ import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
 import { resolveFeatureImageFile, invalidateFeatureImageCache, isImagePath } from "src/io/featureImage";
-import { setThumbnailReadyCallback, removeThumbnailsForSource } from "src/io/thumbnailCache";
+import { registerThumbnailReadyCallback, removeThumbnailsForSource } from "src/io/thumbnailCache";
 import type { ISettings } from "src/settings";
 import type CalendarPlugin from "src/main";
 
@@ -57,6 +57,7 @@ interface CalendarComponent {
 export default class CalendarView extends ItemView {
   private calendar: CalendarComponent | null = null;
   private settings!: ISettings;
+  private unregisterThumbnailReady: (() => void) | null = null;
 
   // The plugin ref is used to persist settings the view itself can change
   // (currently the per-note feature-image hidden list) via writeOptions.
@@ -100,6 +101,8 @@ export default class CalendarView extends ItemView {
   }
 
   onClose(): Promise<void> {
+    this.unregisterThumbnailReady?.();
+    this.unregisterThumbnailReady = null;
     if (this.calendar) {
       void unmount(this.calendar);
       this.calendar = null;
@@ -149,9 +152,12 @@ export default class CalendarView extends ItemView {
     }
 
     // When a feature-image thumbnail finishes generating in the background,
-    // re-tick so its cell re-resolves and the image appears. (`this.calendar`
-    // is nulled on unmount, so this is a no-op after the view closes.)
-    setThumbnailReadyCallback(() => this.calendar?.tick());
+    // re-tick so its cell re-resolves and the image appears. Registered per
+    // view and unregistered in onClose so multiple views each refresh and a
+    // closed view's callback doesn't linger.
+    this.unregisterThumbnailReady = registerThumbnailReadyCallback(() =>
+      this.calendar?.tick()
+    );
 
     // Garbage-collect thumbnails for images no longer used as a featured image.
     // Deferred + once per session: it scans all periodic notes, so keep it off
