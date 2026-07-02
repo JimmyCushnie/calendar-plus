@@ -46,6 +46,13 @@ const fireReady = debounce(() => onReady?.(), 50, true);
 let activeGenerations = 0;
 const generationQueue: (() => void)[] = [];
 
+// Bumped whenever cached state is invalidated (teardown, source removal, GC
+// sweep). An in-flight prepare() captures the epoch at start and discards its
+// result if the epoch changed while it ran, so a job that finishes *after* a
+// teardown/remove can't repopulate a just-cleared map with an object URL that
+// nothing will ever revoke.
+let epoch = 0;
+
 export function initThumbnailCache(a: App, dir: string): void {
   app = a;
   cacheDir = normalizePath(dir);
@@ -59,6 +66,7 @@ export function setThumbnailReadyCallback(cb: () => void): void {
 
 /** Revoke object URLs and reset. Called on plugin unload. */
 export function teardownThumbnailCache(): void {
+  epoch++;
   for (const url of urlByKey.values()) {
     if (url.startsWith("blob:")) URL.revokeObjectURL(url);
   }
@@ -84,6 +92,7 @@ export async function removeThumbnailsForSource(sourcePath: string): Promise<voi
   const a = app;
   const dir = cacheDir;
   if (!a || !dir) return;
+  epoch++;
   const prefix = `${hashPath(sourcePath)}-`;
 
   for (const key of [...urlByKey.keys()]) {
@@ -148,6 +157,7 @@ async function prepare(
   file: TFile,
   key: string
 ): Promise<void> {
+  const startEpoch = epoch;
   let url: string | null = null;
   try {
     url = await loadFromDisk(a, dir, key);
@@ -164,9 +174,31 @@ async function prepare(
       url = null;
     }
   }
-  if (url) {
-    urlByKey.set(key, url);
-    fireReady();
+  if (!url) return;
+  if (epoch !== startEpoch) {
+    // Cache was torn down / invalidated while we ran — don't repopulate the
+    // cleared map, and revoke the blob we just made so it doesn't leak.
+    if (url.startsWith("blob:")) URL.revokeObjectURL(url);
+    return;
+  }
+  // Drop any older-mtime object URLs for this same source image before storing
+  // the new one (the on-disk equivalent is pruneStaleSiblings).
+  revokeSiblingUrls(file.path, key);
+  urlByKey.set(key, url);
+  fireReady();
+}
+
+// Revoke + drop any urlByKey entries for the same source image at a different
+// (older) key/mtime, so re-saving an image within a session doesn't accumulate
+// orphaned blob URLs that nothing revokes until unload.
+function revokeSiblingUrls(sourcePath: string, keepKey: string): void {
+  const prefix = `${hashPath(sourcePath)}-`;
+  for (const k of [...urlByKey.keys()]) {
+    if (k !== keepKey && k.startsWith(prefix)) {
+      const u = urlByKey.get(k);
+      if (u?.startsWith("blob:")) URL.revokeObjectURL(u);
+      urlByKey.delete(k);
+    }
   }
 }
 
@@ -181,6 +213,7 @@ export async function pruneThumbnailsExcept(inUseFiles: TFile[]): Promise<void> 
   const a = app;
   const dir = cacheDir;
   if (!a || !dir) return;
+  epoch++;
   const keep = new Set(inUseFiles.map(keyFor));
 
   for (const key of [...urlByKey.keys()]) {
@@ -206,8 +239,15 @@ export async function pruneThumbnailsExcept(inUseFiles: TFile[]): Promise<void> 
 async function ensureDir(a: App, dir: string): Promise<void> {
   if (!dirReady) {
     dirReady = (async () => {
-      if (!(await a.vault.adapter.exists(dir))) {
-        await a.vault.adapter.mkdir(dir);
+      try {
+        if (!(await a.vault.adapter.exists(dir))) {
+          await a.vault.adapter.mkdir(dir);
+        }
+      } catch (e) {
+        // Don't cache the failure forever — reset so the next generation retries
+        // instead of every future thumbnail silently falling back to full-res.
+        dirReady = null;
+        throw e;
       }
     })();
   }
