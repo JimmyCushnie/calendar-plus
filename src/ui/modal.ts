@@ -29,8 +29,13 @@ export class ConfirmationModal extends Modal {
         })
         .addEventListener("click", () => {
           void (async () => {
-            await onAccept();
-            this.close();
+            // Always close, even if onAccept rejects (e.g. a create collision);
+            // otherwise the modal is stuck open and the rejection is unhandled.
+            try {
+              await onAccept();
+            } finally {
+              this.close();
+            }
           })();
         });
     });
