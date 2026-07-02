@@ -71,7 +71,10 @@ function createPeriodicNotesStore(periodicity: Periodicity) {
       const uid = getDateUID(date, periodicity);
       let removed = false;
       store.update((current) => {
-        if (!current || !(uid in current)) return current;
+        // Only remove if this exact file owns the UID — two files under a
+        // recursively-scanned folder can parse to the same date, and deleting
+        // one shouldn't drop the other's entry.
+        if (!current || current[uid] !== file) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
@@ -103,7 +106,9 @@ function createPeriodicNotesStore(periodicity: Periodicity) {
       const uid = getDateUID(date, periodicity);
       let removed = false;
       store.update((current) => {
-        if (!current || !(uid in current)) return current;
+        // Only remove if the entry at this UID is the file that moved (another
+        // same-date file may legitimately hold it).
+        if (!current || current[uid]?.path !== oldPath) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
@@ -167,7 +172,8 @@ function createSecondDailyNotesStore() {
       const uid = getDateUID(date, "daily");
       let removed = false;
       store.update((current) => {
-        if (!current || !(uid in current)) return current;
+        // Only remove if this exact file owns the UID (see periodic store).
+        if (!current || current[uid] !== file) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
@@ -189,7 +195,8 @@ function createSecondDailyNotesStore() {
       const uid = getDateUID(date, "daily");
       let removed = false;
       store.update((current) => {
-        if (!current || !(uid in current)) return current;
+        // Only remove if the entry at this UID is the file that moved.
+        if (!current || current[uid]?.path !== oldPath) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
