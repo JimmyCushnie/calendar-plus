@@ -71,6 +71,19 @@ export function invalidateFeatureImageCache(path: string): void {
   fileCache.delete(path);
 }
 
+/**
+ * Drop cached resolutions that point at a given *image* file. Call this when
+ * the image itself is deleted or renamed: the memo is keyed by the referencing
+ * *note's* path/mtime, so an image-file event wouldn't otherwise invalidate it,
+ * leaving a note cached as resolving to a now-dead `TFile` (broken/blank cell
+ * until the note is next edited).
+ */
+export function invalidateFeatureImageCacheForImage(imagePath: string): void {
+  for (const [notePath, entry] of fileCache) {
+    if (entry.file?.path === imagePath) fileCache.delete(notePath);
+  }
+}
+
 function resolveUncached(
   note: TFile,
   app: App,

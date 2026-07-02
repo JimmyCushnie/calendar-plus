@@ -16,7 +16,7 @@ import { tryToCreateYearlyNote } from "src/io/yearlyNotes";
 import { tryToCreateQuarterlyNote } from "src/io/quarterlyNotes";
 import { createPeriodicNote, getLeafForModifierClick } from "src/io/periodicNotes";
 import { createConfirmationDialog } from "src/ui/modal";
-import { resolveFeatureImageFile, invalidateFeatureImageCache, isImagePath } from "src/io/featureImage";
+import { resolveFeatureImageFile, invalidateFeatureImageCache, invalidateFeatureImageCacheForImage, isImagePath } from "src/io/featureImage";
 import { registerThumbnailReadyCallback, removeThumbnailsForSource } from "src/io/thumbnailCache";
 import type { ISettings } from "src/settings";
 import type CalendarPlugin from "src/main";
@@ -489,9 +489,16 @@ export default class CalendarView extends ItemView {
 
   private onFileDeleted = async (file: TAbstractFile): Promise<void> => {
     if (!(file instanceof TFile)) return;
-    // If a feature-image source was deleted, drop its cached thumbnail so it
-    // doesn't orphan in the cache folder.
-    if (isImagePath(file.path)) void removeThumbnailsForSource(file.path);
+    // If a featured-image source was deleted, drop its cached thumbnail so it
+    // doesn't orphan, invalidate any note resolutions pointing at it, and tick
+    // so those cells re-resolve (they'd otherwise keep the now-dead image).
+    if (isImagePath(file.path)) {
+      void removeThumbnailsForSource(file.path);
+      if (this.settings.featureImage.enabled) {
+        invalidateFeatureImageCacheForImage(file.path);
+        this.calendar?.tick();
+      }
+    }
     const changed = [
       dailyNotes.removeFile(file),
       weeklyNotes.removeFile(file),
@@ -540,8 +547,16 @@ export default class CalendarView extends ItemView {
     if (!this.app.workspace.layoutReady || !this.calendar) return;
     if (!(file instanceof TFile)) return;
     // A renamed image's thumbnail is keyed on the old path; drop it (the new
-    // path regenerates on demand) so it doesn't orphan.
-    if (isImagePath(oldPath)) void removeThumbnailsForSource(oldPath);
+    // path regenerates on demand) so it doesn't orphan. Also invalidate any
+    // note resolutions that pointed at the old path and tick, so cells whose
+    // links didn't auto-update re-resolve instead of keeping the dead image.
+    if (isImagePath(oldPath)) {
+      void removeThumbnailsForSource(oldPath);
+      if (this.settings.featureImage.enabled) {
+        invalidateFeatureImageCacheForImage(oldPath);
+        this.calendar?.tick();
+      }
+    }
     // If a note with a hidden featured image was renamed/moved, migrate its
     // stored path so it stays hidden (hiddenNotes holds vault paths).
     this.migrateHiddenNotePath(oldPath, file.path);
