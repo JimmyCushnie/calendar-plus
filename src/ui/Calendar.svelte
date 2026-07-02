@@ -92,10 +92,14 @@
   });
 
   // Recomputed when the displayed year changes (via the year-overview arrows,
-  // which mutate displayedMonth) or when any note store changes.
+  // which mutate displayedMonth) or when any note store changes. Keyed on the
+  // year (a primitive `$derived`) rather than `displayedMonth` directly, so
+  // plain month navigation within the same year doesn't re-run the (store-wide)
+  // getMonthsWithNotes scan — the derived's value equality skips it.
+  const displayedYear = $derived(displayedMonth.year());
   const monthsWithNotes = $derived(
     getMonthsWithNotes(
-      displayedMonth.year(),
+      displayedYear,
       $dailyNotes,
       $weeklyNotes,
       $monthlyNotes
