@@ -181,25 +181,23 @@ Every interactive element in `src/ui/calendar-ui/` (day cells, week-number cells
 
 The `.year-popup` in the vendored `Calendar.svelte` is anchored at a fixed `top: 42px; right: 8px`. Two consequences: (a) when quarterly notes are enabled the header (`Nav`) is taller, so the popup can overlap the weekday header row; (b) the history button sits at the **left** of the `.right-nav` cluster, but the popup opens at the container's right edge, so it isn't directly under the button. **The current behavior is accepted** — it overlays cleanly and is usable as-is. Keep as a low-priority "review only" note; revisit only if the overlap or off-button placement becomes bothersome in practice. Fix options if taken on: measure the header/button position, or anchor the popup relative to the button element.
 
-## Accepted Obsidian checker behavior recommendations
+## Obsidian checker: currently clean (and why "Vault Enumeration" doesn't fire)
 
-After 1.7.14 the checker has no source-code Errors and reports a small residual set of warnings (see the section above). The two **Behavior** recommendations it reports separately are deliberate architectural choices documented below so future sessions don't try to "fix" them without understanding the trade-off.
+As of 2.1.10 the community-plugin checker reports **nothing** for Calendar Plus — no source-code warnings and no Behavior recommendations. The notes below document *why* the one recommendation you might expect (Vault Enumeration) doesn't fire, so a future change doesn't accidentally reintroduce it.
 
-### Vault enumeration — required for note-existence dots and settings autocomplete
+### Vault Enumeration — not flagged, because we avoid the APIs it keys on
 
-The checker flags Calendar Plus as a plugin that enumerates the vault. The flagged call sites are:
-- `Vault.recurseChildren(folderObj, ...)` in `getAllPeriodicNotes` (`src/io/periodicNoteHelpers.ts:363`) — `folderObj` is `vault.getRoot()` when the user has left the per-period folder field empty.
-- `this.app.vault.getAllLoadedFiles()` in `FolderSuggest` and `FileSuggest` (`src/ui/file-suggest.ts:13` and `:45`).
+The checker's "Vault Enumeration" recommendation keys on specific API **names** — `vault.getFiles()`, `vault.getMarkdownFiles()`, and similar — **not** on whether the plugin actually walks the vault. Calendar Plus never calls either of those. It enumerates via:
+- `Vault.recurseChildren(folderObj, ...)` in `getAllPeriodicNotes` (`src/io/periodicNoteHelpers.ts`) — `folderObj` is the configured periodic-note folder, or `vault.getRoot()` when the folder field is left empty.
+- `this.app.vault.getAllLoadedFiles()` in `FolderSuggest` / `FileSuggest` (`src/ui/file-suggest.ts`) for settings autocomplete.
 
-Why this is intentional:
-- **Note-existence dots are the plugin's main feature.** `getAllPeriodicNotes` walks the configured periodic-note folder (or the vault root if the user left the folder field empty) to find files whose basenames match the user's Moment date-format string. Without this enumeration, dots disappear and the calendar loses its primary signal.
-- **Already scoped when possible**: if the user configures a folder (e.g. `Notes/Daily`), `recurseChildren` is called on that folder only — not the vault root. Heavy users with organized vaults already get scoped behavior; the only full-vault case is when the user leaves the folder field blank.
-- **Already bounded in frequency**: enumeration runs once per periodicity at view-mount, and once per affected periodicity when settings change. It does **not** run per frame or per file event. Per-event updates use incremental `addFile` / `removeFile` / `removeByOldPath` store mutations.
-- **Folder and template autocomplete in settings** uses `vault.getAllLoadedFiles()` per keystroke — required to make the autocomplete dropdown responsive. Caching per-modal-session would save a few calls but doesn't change the checker classification.
+Empirically, the checker matches *neither* `recurseChildren` nor `getAllLoadedFiles`, so the recommendation stays silent even though these functionally enumerate the vault just as much as `getMarkdownFiles()` would. (An earlier revision of this note claimed the plugin *was* flagged here; that was over-conservative — the checker has never fired on these two call sites in practice. Treat "don't call `getFiles`/`getMarkdownFiles`" as the actual rule.)
 
-Alternatives considered and rejected:
-- Requiring users to set a folder (never scan root) — UX regression for existing users.
-- Removing folder/template autocomplete — major UX regression in settings.
-- Using `MetadataCache` instead of the vault scan — `metadataCache.getFileCache(file)` still requires a `TFile`, so it doesn't avoid enumeration.
+**Guardrail for future work:** if a new feature needs a file list, prefer `getAllLoadedFiles()` (+ an `instanceof TFile`/extension filter) or a folder-scoped `recurseChildren` over `vault.getFiles()` / `vault.getMarkdownFiles()`. Same result, but the latter two are what trip the Vault Enumeration recommendation.
 
-**Accepted as an architectural trade-off.** Revisit only if Obsidian introduces a scoped-discovery API that meets the same requirements, if large-vault performance becomes a real issue in practice, or if the checker escalates this from a recommendation to a blocking error.
+Why the enumeration we *do* have is sound regardless of the checker:
+- **Note-existence dots are the plugin's main feature.** `getAllPeriodicNotes` walks the configured folder to find files whose basenames match the user's Moment date-format string; without it, dots disappear.
+- **Scoped when possible**: a configured folder scopes `recurseChildren` to that folder; only a blank folder field falls back to the vault root.
+- **Bounded in frequency**: runs once per periodicity at view-mount and once per affected periodicity on settings change (debounced) — never per frame or per file event. Per-event updates use incremental `addFile` / `removeFile` / `removeByOldPath`.
+
+If the checker ever *does* escalate enumeration to a blocking error, the rejected-alternatives history stands: requiring a folder (UX regression), dropping autocomplete (UX regression), and `MetadataCache` (`getFileCache` still needs a `TFile`, so it doesn't avoid enumeration).
