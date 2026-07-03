@@ -48,6 +48,17 @@ Configure each periodic-note type independently from Settings → Calendar Plus 
 - **Folder** is where notes for that periodicity are created. Leave blank for the vault root.
 - **Template file** is an optional path to a template note.
 
+**A note on folders in the date format.** Your **Date format** may contain `/` to sort notes into subfolders — e.g. `YYYY/MM-MMMM/YYYY-MM-DD` files each day under a year/month folder. Just keep one rule in mind: the **filename** (the part after the last `/`) has to identify the period on its own. Calendar Plus reads the date back from the filename, not from the folder names, so any date component that lives *only* in a folder is ignored. Concretely, the filename needs every part coarser than the note's own period:
+
+- **Daily** → year, month, and day (e.g. `…/YYYY-MM-DD`)
+- **Weekly** → week-year and week number (e.g. `…/gggg-[W]ww`)
+- **Monthly** → year and month · **Quarterly** → year and quarter · **Yearly** → the year
+
+✅ `YYYY/MM/YYYY-MM-DD` — folders organize; the full date is still in the filename
+⚠️ `YYYY/MM/DD` — year and month live only in folders, so every month's `15` would be read as the same day
+
+(Folders are optional — a flat format like `YYYY-MM-DD` is perfectly fine and needs nothing special.)
+
 Calendar Plus owns its own settings for all five periodic-note types and doesn't read from Obsidian's core Daily Notes plugin or other periodic-notes plugins.
 
 ### Settings
