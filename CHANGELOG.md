@@ -1,5 +1,15 @@
 # Changelog
 
+## 2.1.11
+
+A batch of correctness and reliability fixes from a full code review, plus documentation. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Featured images clear correctly when the source image changes.** Deleting or renaming an image that a day cell uses now updates the cell instead of leaving a broken/blank background until the note is reopened.
+- **Second daily notes highlight reliably.** Opening or creating a second daily note now applies its grey highlight immediately (previously it could fail to appear, especially on mobile), and a rapid double Alt-click no longer tries to create it twice.
+- **Steadier calendar under load.** A failing note read no longer blanks a day cell; the confirm-to-create dialog always closes even if creation fails; and thumbnail-cache object URLs are cleaned up more carefully (no leaks when closing the calendar mid-generation, re-saving an image, or running two calendar views).
+- **Fewer redundant recomputations** when navigating months within the same year.
+- **Docs:** clarified how folders work in the date format (the filename must identify the period on its own — nesting like `YYYY/MM/…` is supported as long as the full date stays in the filename).
+
 ## 2.1.10
 
 Small fixes. No new settings; `minAppVersion` unchanged at 1.8.7.
