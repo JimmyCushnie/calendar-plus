@@ -17,6 +17,36 @@ declare global {
   }
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Recursively merge `patch` onto `base`, returning a new object. Plain-object
+ * values merge key-by-key at any depth; everything else (primitives, arrays) is
+ * replaced wholesale by the patch value, and a patch value of `undefined` is
+ * ignored (keeps base).
+ *
+ * This is the single mechanism behind both default-backfill on load and nested
+ * settings writes, replacing a hand-maintained per-key merge. It matters
+ * because Calendar Plus has "no migration code" as a product rule, so
+ * default-backfill-on-load is the *entire* forward-compat path: a saved blob
+ * missing a (possibly deeply) nested field keeps its default without anyone
+ * having to remember to add a merge line, and a `writeOptions` caller that
+ * returns a partial can't silently drop the sibling fields it didn't mention.
+ */
+function deepMerge<T>(base: T, patch: unknown): T {
+  if (!isPlainObject(base) || !isPlainObject(patch)) {
+    return patch === undefined ? base : (patch as T);
+  }
+  const result: Record<string, unknown> = { ...base };
+  for (const [key, patchValue] of Object.entries(patch)) {
+    if (patchValue === undefined) continue;
+    result[key] = deepMerge(result[key], patchValue);
+  }
+  return result as T;
+}
+
 export default class CalendarPlugin extends Plugin {
   public options!: ISettings;
 
@@ -129,21 +159,11 @@ export default class CalendarPlugin extends Plugin {
   }
 
   async loadOptions(): Promise<void> {
-    const options = ((await this.loadData()) ?? {}) as Partial<ISettings>;
-    settings.update((old) => ({
-      ...old,
-      ...options,
-      // Per-period objects need a one-level merge so a partial saved object
-      // (e.g. { enabled: true, format: "YYYY-MM-DD" }) doesn't wipe folder /
-      // template defaults from the parent spread above.
-      daily:       { ...old.daily,       ...(options.daily       ?? {}) },
-      weekly:      { ...old.weekly,      ...(options.weekly      ?? {}) },
-      monthly:     { ...old.monthly,     ...(options.monthly     ?? {}) },
-      quarterly:   { ...old.quarterly,   ...(options.quarterly   ?? {}) },
-      yearly:      { ...old.yearly,      ...(options.yearly      ?? {}) },
-      secondDaily:    { ...old.secondDaily,    ...(options.secondDaily    ?? {}) },
-      featureImage:   { ...old.featureImage,   ...(options.featureImage   ?? {}) },
-    }));
+    // Backfill defaults for any missing key at any depth. `deepMerge` replaces
+    // the old hand-maintained per-object merge, so a new (even deeply) nested
+    // setting can't be wiped by a returning user's saved blob.
+    const saved: unknown = (await this.loadData()) ?? {};
+    settings.update((defaults) => deepMerge(defaults, saved));
 
     await this.saveData(this.options);
   }
@@ -151,7 +171,10 @@ export default class CalendarPlugin extends Plugin {
   async writeOptions(
     changeOpts: (settings: ISettings) => Partial<ISettings>
   ): Promise<void> {
-    settings.update((old) => ({ ...old, ...changeOpts(old) }));
+    // deepMerge (not a shallow spread) so a change that returns a nested
+    // partial — e.g. { featureImage: { enabled: true } } — preserves the
+    // object's other fields rather than dropping them.
+    settings.update((old) => deepMerge(old, changeOpts(old)));
     await this.saveData(this.options);
   }
 }
