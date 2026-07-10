@@ -581,12 +581,12 @@ export default class CalendarView extends ItemView {
     // call is a no-op if the file doesn't match that periodicity — same
     // gating logic as create/delete, just doubled up for the move.
     const removed = [
-      dailyNotes.removeByOldPath(oldPath),
-      weeklyNotes.removeByOldPath(oldPath),
-      monthlyNotes.removeByOldPath(oldPath),
-      quarterlyNotes.removeByOldPath(oldPath),
-      yearlyNotes.removeByOldPath(oldPath),
-      secondDailyNotes.removeByOldPath(oldPath),
+      dailyNotes.removeByOldPath(oldPath, file),
+      weeklyNotes.removeByOldPath(oldPath, file),
+      monthlyNotes.removeByOldPath(oldPath, file),
+      quarterlyNotes.removeByOldPath(oldPath, file),
+      yearlyNotes.removeByOldPath(oldPath, file),
+      secondDailyNotes.removeByOldPath(oldPath, file),
     ].some(Boolean);
     const added = [
       dailyNotes.addFile(file),

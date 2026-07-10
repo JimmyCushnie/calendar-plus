@@ -87,7 +87,7 @@ function createPeriodicNotesStore(periodicity: Periodicity) {
     // post-rename state, so we can't derive the old UID from a TFile — we
     // parse the old basename out of `oldPath` directly. Pairs with `addFile`
     // in the rename handler to move dots cleanly.
-    removeByOldPath: (oldPath: string): boolean => {
+    removeByOldPath: (oldPath: string, file: TFile): boolean => {
       const currentSettings = get(settings);
       const periodSettings = currentSettings[periodicity];
       if (!periodSettings.enabled) return false;
@@ -106,9 +106,12 @@ function createPeriodicNotesStore(periodicity: Periodicity) {
       const uid = getDateUID(date, periodicity);
       let removed = false;
       store.update((current) => {
-        // Only remove if the entry at this UID is the file that moved (another
-        // same-date file may legitimately hold it).
-        if (!current || current[uid]?.path !== oldPath) return current;
+        // Only remove if this exact file owns the UID. Compare by identity, NOT
+        // by .path: Obsidian mutates TFile.path to the new path *before* firing
+        // the rename event, so the stored entry's .path already equals the new
+        // path — a .path===oldPath check would never match and would leak a
+        // stale dot at the old date. (A different same-date file may hold it.)
+        if (!current || current[uid] !== file) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
@@ -181,7 +184,7 @@ function createSecondDailyNotesStore() {
       });
       return removed;
     },
-    removeByOldPath: (oldPath: string): boolean => {
+    removeByOldPath: (oldPath: string, file: TFile): boolean => {
       const { secondDaily } = get(settings);
       if (!secondDaily.enabled) return false;
       if (!isPathInConfiguredFolder(oldPath, secondDaily)) return false;
@@ -195,8 +198,10 @@ function createSecondDailyNotesStore() {
       const uid = getDateUID(date, "daily");
       let removed = false;
       store.update((current) => {
-        // Only remove if the entry at this UID is the file that moved.
-        if (!current || current[uid]?.path !== oldPath) return current;
+        // Only remove if this exact file owns the UID (compare by identity —
+        // TFile.path is already the new path by the time rename fires; see the
+        // periodic store's removeByOldPath for the full rationale).
+        if (!current || current[uid] !== file) return current;
         removed = true;
         const next = { ...current };
         delete next[uid];
