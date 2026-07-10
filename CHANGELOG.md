@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.12
+
+A regression fix and a performance tweak. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **Fixed (regression from 2.1.11):** renaming or moving a tracked periodic note left a stale duplicate dot at the note's old date (the note showed at both the old and new dates) until the calendar was reloaded. The old dot now clears correctly on rename/move.
+- **Faster with the year overview off:** the year-overview month dots are only computed when that feature is enabled, so creating/deleting/renaming notes — and bulk operations like a large sync — no longer do extra work for the majority who don't use the year popup.
+
 ## 2.1.11
 
 A batch of correctness and reliability fixes from a full code review, plus documentation. No new settings; `minAppVersion` unchanged at 1.8.7.
