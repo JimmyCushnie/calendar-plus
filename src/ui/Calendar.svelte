@@ -91,19 +91,26 @@
     coalescedTick.cancel();
   });
 
+  // Stable empty reference used when the year overview is disabled (below), so
+  // the derived doesn't churn identity while off.
+  const EMPTY_MONTHS: boolean[] = Array.from({ length: 12 }, () => false);
+
   // Recomputed when the displayed year changes (via the year-overview arrows,
   // which mutate displayedMonth) or when any note store changes. Keyed on the
   // year (a primitive `$derived`) rather than `displayedMonth` directly, so
   // plain month navigation within the same year doesn't re-run the (store-wide)
   // getMonthsWithNotes scan — the derived's value equality skips it.
+  //
+  // Gated on `showYearOverview`: when the year popup is disabled (the majority
+  // case), the note-store reads below are never evaluated, so they aren't
+  // dependencies and this scan does NOT re-run on every file create/delete/
+  // rename (store mutations bypass tick coalescing, so this was the one
+  // uncoalesced per-mutation cost — notably during a sync burst / bulk import).
   const displayedYear = $derived(displayedMonth.year());
   const monthsWithNotes = $derived(
-    getMonthsWithNotes(
-      displayedYear,
-      $dailyNotes,
-      $weeklyNotes,
-      $monthlyNotes
-    )
+    $settings.showYearOverview
+      ? getMonthsWithNotes(displayedYear, $dailyNotes, $weeklyNotes, $monthlyNotes)
+      : EMPTY_MONTHS
   );
 
   // Imperative API exposed to the view (CalendarView) via mount()'s exports.

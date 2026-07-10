@@ -1,13 +1,16 @@
 import type { TFile } from "obsidian";
-import { moment } from "src/types/moment";
 
 /**
  * Mark, in `out`, every month index (0 = Jan … 11 = Dec) of `year` that has at
  * least one note in the given store. The store is keyed by `getDateUID`
  * output: `${unit}-${ISOdate}` (e.g. `day-2026-06-12T00:00:00-07:00`). The
  * unit ("day" / "week" / "month") contains no "-", so the first "-" separates
- * it from the ISO timestamp, which we reconstruct with `moment.parseZone` to
- * preserve the stored local offset (avoids a midnight date shifting months).
+ * it from the ISO timestamp. We read the year/month digits directly off the
+ * ISO string's local-date portion (`YYYY-MM-…`) rather than parsing it with
+ * moment: the stored string already encodes the intended local date, so
+ * reading the chars can't shift a month across a timezone boundary, and it
+ * avoids a `moment.parseZone` call per stored UID (this runs across every
+ * tracked note when the year overview is enabled).
  */
 function fillMonthsForStore(
   notes: Record<string, TFile> | null,
@@ -17,9 +20,8 @@ function fillMonthsForStore(
   if (!notes) return;
   for (const uid of Object.keys(notes)) {
     const iso = uid.substring(uid.indexOf("-") + 1);
-    const d = moment.parseZone(iso);
-    if (d.year() === year) {
-      out[d.month()] = true;
+    if (parseInt(iso.slice(0, 4), 10) === year) {
+      out[parseInt(iso.slice(5, 7), 10) - 1] = true;
     }
   }
 }
