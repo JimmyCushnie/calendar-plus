@@ -113,6 +113,18 @@
       : EMPTY_MONTHS
   );
 
+  // Locale data for the calendar grid. getMonth/getDaysOfWeek read moment's
+  // *global* locale directly and use this only as a reactivity trigger, so it
+  // just needs a fresh identity when the locale actually changes. Key it on the
+  // settings that drive the locale (applied by configureGlobalMomentLocale in
+  // the $effect.pre above) via `moment()` — NOT `today` — so it stays stable
+  // across content ticks and the 42-cell month grid stops rebuilding every tick.
+  const localeData = $derived.by(() => {
+    void $settings.localeOverride;
+    void $settings.weekStart;
+    return { ...moment().localeData() };
+  });
+
   // Imperative API exposed to the view (CalendarView) via mount()'s exports.
   //
   // A tick re-derives every visible cell's metadata (the sources read the note
@@ -224,7 +236,7 @@
     {onClickQuarter}
     {onClickToday}
     bind:displayedMonth
-    localeData={{...today.localeData()}}
+    {localeData}
     selectedId={$activeFile}
     selectedSecondDailyId={$activeSecondDailyFile}
     showWeekNums={$settings.weekly.enabled}

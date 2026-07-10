@@ -99,11 +99,12 @@
     yearOverviewOpen = false;
   }
 
-  // getMonth/getDaysOfWeek read moment's global locale; `localeData` (and
-  // `today`) are passed as reactivity triggers so these re-derive when the
-  // locale / week-start change. See utils.ts.
+  // getMonth/getDaysOfWeek read moment's global locale; `localeData` is passed
+  // as a reactivity trigger so these re-derive when the locale / week-start
+  // change. The parent now keys `localeData` on the locale settings (not
+  // `today`), so these no longer rebuild on every content tick. See utils.ts.
   const month = $derived(getMonth(displayedMonth, localeData));
-  const daysOfWeek = $derived(getDaysOfWeek(today, localeData));
+  const daysOfWeek = $derived(getDaysOfWeek(localeData));
 
   // Exports
   export function incrementDisplayedMonth() {
