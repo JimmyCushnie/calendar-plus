@@ -143,6 +143,10 @@ Right-click the calendar's view icon in the sidebar and choose Close. Reopen it 
 
 Wrap the words in `[]` brackets in your Moment.js format string. For example, `[Week] ww [of Year] gggg` produces filenames like `Week 21 of Year 2020`. The brackets tell Moment.js to treat the enclosed text literally instead of as format tokens.
 
+### The plugin fails to load on mobile — how do I fix it?
+
+If you see a "failed to load" error (the console shows `main.js` couldn't be opened), the plugin's code file is missing on that device — usually because it arrived via Obsidian Sync, which carries the plugin's settings but not always its program file. Fix it by installing the plugin directly on that device: **Settings → Community plugins → Browse → search "Calendar Plus" → Install** (or reinstall). That downloads the plugin's files straight to the device instead of relying on Sync.
+
 ## Tips
 
 ### Embed each day of a week in a weekly note

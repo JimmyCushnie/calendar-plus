@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.13
+
+Internal robustness and performance. No new settings; `minAppVersion` unchanged at 1.8.7.
+
+- **More robust settings handling.** Saved settings are now merged with defaults at any depth on load, and partial settings updates preserve their neighboring fields — so settings can't be lost as the plugin's options evolve. No user-facing change.
+- **Small performance improvement.** The calendar's month grid no longer does redundant work on routine updates (file changes, sync, typing), only when the month or locale actually changes.
+- **Docs:** added a note on fixing a mobile "failed to load" error (reinstall from the Community Plugins store rather than relying on Obsidian Sync to carry the plugin's files).
+
 ## 2.1.12
 
 A regression fix and a performance tweak. No new settings; `minAppVersion` unchanged at 1.8.7.
