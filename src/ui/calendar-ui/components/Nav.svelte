@@ -66,7 +66,7 @@
         class="month"
         onclick={(event) => {
           onClickMonth(displayedMonth, isMetaPressed(event));
-        }}>{displayedMonth.format("MMM")}</span
+        }}>{displayedMonth.format("MMMM")}</span
       >
       <span
         class="year"
