@@ -2,8 +2,9 @@ import type { Moment } from "src/types/moment";
 import {
   getDateFromFile as helperGetDateFromFile,
   getPeriodicNote as helperGetPeriodicNote,
+  isFileInConfiguredFolder,
 } from "src/io/periodicNoteHelpers";
-import { Menu, ItemView, TFile } from "obsidian";
+import { FileView, Menu, ItemView, TFile } from "obsidian";
 import type { TAbstractFile, WorkspaceLeaf } from "obsidian";
 import { mount, unmount } from "svelte";
 import { get } from "svelte/store";
@@ -52,6 +53,12 @@ import {
 interface CalendarComponent {
   tick(): void;
   setDisplayedMonth(date: Moment): void;
+}
+
+// Allows access to the journal plugin's goToDate function
+// See https://github.com/RUverse/journal-view/blob/1.1.2/src/view.ts#L959
+interface JournalScrollView {
+  goToDate(date: Moment, focus?: boolean): void;
 }
 
 export default class CalendarView extends ItemView {
@@ -724,6 +731,34 @@ export default class CalendarView extends ItemView {
     activeFile.setFile(existingFile);
   };
 
+  private getActiveJournalView(): JournalScrollView | null {
+    const leaf = this.app.workspace.getMostRecentLeaf();
+    if (!leaf || leaf.view.getViewType() !== "journal-view") return null;
+    const view = leaf.view as unknown as Partial<JournalScrollView>;
+    return typeof view.goToDate === "function" ? (view as JournalScrollView) : null;
+  }
+
+  private tabIsShowingDailyNote(leaf: WorkspaceLeaf): boolean {
+    const { daily } = this.settings;
+    if (!daily.enabled) return false;
+    if (!(leaf.view instanceof FileView)) return false;
+    const file = leaf.view.file;
+    if (!file || !isFileInConfiguredFolder(file, daily)) return false;
+    return helperGetDateFromFile(file, "daily", daily.format) !== null;
+  }
+
+  // My custom tab behavior
+  //   - Mod (Cmd/Ctrl) + click always opens a new tab to the right of the active one.
+  //   - A plain click reuses the active tab when it already shows a daily note.
+  //   - Otherwise a new tab beside the active one.
+  private getDayClickLeaf(ctrlPressed: boolean): WorkspaceLeaf {
+    if (!ctrlPressed) {
+      const activeLeaf = this.app.workspace.getMostRecentLeaf();
+      if (activeLeaf && this.tabIsShowingDailyNote(activeLeaf)) return activeLeaf;
+    }
+    return this.app.workspace.getLeaf("tab");
+  }
+
   openOrCreateDailyNote = async (
     date: Moment,
     ctrlPressed: boolean,
@@ -742,6 +777,16 @@ export default class CalendarView extends ItemView {
     }
 
     if (!this.settings.daily.enabled) return;
+
+    // Plain click while the journal view is the active tab scrolls the journal to that day
+    if (!ctrlPressed) {
+      const journalView = this.getActiveJournalView();
+      if (journalView) {
+        journalView.goToDate(date);
+        return;
+      }
+    }
+
     const existingFile = helperGetPeriodicNote(date, "daily", get(dailyNotes) ?? {});
     if (!existingFile) {
       void tryToCreateDailyNote(
@@ -750,13 +795,14 @@ export default class CalendarView extends ItemView {
         this.settings,
         (dailyNote: TFile) => {
           activeFile.setFile(dailyNote);
-        }
+        },
+        () => this.getDayClickLeaf(ctrlPressed)
       );
       return;
     }
 
-    const leaf = getLeafForModifierClick(ctrlPressed, this.settings, workspace);
-    await leaf.openFile(existingFile);
+    const leaf = this.getDayClickLeaf(ctrlPressed);
+    await leaf.openFile(existingFile, { active: true });
 
     // Synchronous active-file update — see note in openOrCreateWeeklyNote.
     activeFile.setFile(existingFile);

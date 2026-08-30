@@ -136,17 +136,25 @@ export function getLeafForModifierClick(
  * Create a periodic note (with confirm-before-create UX) and open it in the
  * leaf chosen by the modifier-click logic. Optional callback fires after the
  * file is opened, useful for caller-side activeFile bookkeeping.
+ *
+ * `getLeaf` overrides the destination-leaf choice for callers with their own
+ * routing rules (day cells do — see `CalendarView.getDayClickLeaf`). It is
+ * invoked only after the note is actually created, so a leaf-creating resolver
+ * doesn't leave an empty tab behind when the user cancels the confirmation.
  */
 export async function tryToCreatePeriodicNoteAndOpen(
   periodicity: Periodicity,
   date: Moment,
   ctrlPressed: boolean,
   settings: ISettings,
-  cb?: (newFile: TFile) => void
+  cb?: (newFile: TFile) => void,
+  getLeaf?: () => WorkspaceLeaf
 ): Promise<void> {
   await tryToCreatePeriodicNote(periodicity, date, settings, async (newFile) => {
     const { workspace } = window.app;
-    const leaf = getLeafForModifierClick(ctrlPressed, settings, workspace);
+    const leaf = getLeaf
+      ? getLeaf()
+      : getLeafForModifierClick(ctrlPressed, settings, workspace);
     await leaf.openFile(newFile, { active: true });
     cb?.(newFile);
   });
