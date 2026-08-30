@@ -1,4 +1,4 @@
-import { Platform } from "obsidian";
+import { Keymap } from "obsidian";
 
 import { moment } from "src/types/moment";
 import type { Moment } from "src/types/moment";
@@ -6,7 +6,7 @@ import type { Moment } from "src/types/moment";
 import type { IMonth, IWeek } from "./types";
 
 export function isMetaPressed(e: MouseEvent): boolean {
-  return Platform.isMacOS ? e.metaKey : e.ctrlKey;
+  return Keymap.isModifier(e, "Mod");
 }
 
 // Option (macOS) / Alt (Windows/Linux). Cross-platform via the single
