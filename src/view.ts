@@ -750,11 +750,20 @@ export default class CalendarView extends ItemView {
   // My custom tab behavior
   //   - Mod (Cmd/Ctrl) + click always opens a new tab to the right of the active one.
   //   - A plain click reuses the active tab when it already shows a daily note.
+  //   - If another tab in the main area is a daily note, use that one.
   //   - Otherwise a new tab beside the active one.
   private getDayClickLeaf(ctrlPressed: boolean): WorkspaceLeaf {
     if (!ctrlPressed) {
       const activeLeaf = this.app.workspace.getMostRecentLeaf();
-      if (activeLeaf && this.tabIsShowingDailyNote(activeLeaf)) return activeLeaf;
+      if (activeLeaf) {
+        if (this.tabIsShowingDailyNote(activeLeaf)) return activeLeaf;
+
+        let existingDailyNoteLeaf: WorkspaceLeaf | null = null;
+        this.app.workspace.iterateRootLeaves((leaf) => {
+          if (!existingDailyNoteLeaf && this.tabIsShowingDailyNote(leaf)) existingDailyNoteLeaf = leaf;
+        })
+        if (existingDailyNoteLeaf) return existingDailyNoteLeaf;
+      }
     }
     return this.app.workspace.getLeaf("tab");
   }
